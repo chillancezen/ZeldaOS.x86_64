@@ -1,0 +1,40 @@
+ENTRY(kernel_boot_init)
+OUTPUT_FORMAT(elf64-x86-64)
+OUTPUT_ARCH(i386:x86-64)
+
+SECTIONS
+{
+  . = 0x800000;
+
+  _kernel_text_start = .;
+  .text BLOCK(4K) : ALIGN(4K)
+  {
+    *(.kernel_init64_fn)
+    *(.text*)
+    *(.rodata)
+  }
+  _kernel_text_end = .;
+  _kernel_data_start = ALIGN(4096);
+  .data BLOCK(4K) : ALIGN(4K)
+  {
+    _kernel_constructor_start = .;
+    KEEP(*( .init_array ));
+    KEEP(*(SORT_BY_INIT_PRIORITY( .init_array.* )));
+    _kernel_constructor_end = .;
+    *(.data)
+    _zelda_drive_start = .;
+    KEEP(*(.zelda_drive))
+    _zelda_drive_end = .;
+  }
+  _kernel_data_end = .;
+  _kernel_bss_start = ALIGN(4096);
+  .bss BLOCK(4K) : ALIGN(4K)
+  {
+    *(.bss)
+  }
+  _kernel_bss_end = .;
+  . = ALIGN(4096);
+  _kernel_end = .;
+  /DISCARD/ : { *(.fini_array*) *(.comment) }
+}
+

@@ -15,4 +15,4 @@ clean:
 	@rm -f $(OBJ) $(BIN)
 run:$(BIN)
 	@#qemu-system-x86_64 -serial tcp::4444,server -monitor null -nographic -vnc :100 -drive file=zelda_loader.bin,if=ide
-	@qemu-system-x86_64  -monitor null -nographic -vnc :100 -drive file=zelda_loader.bin,if=ide
+	@qemu-system-x86_64  -monitor null -nographic -vnc :100 -drive file=zelda_loader.bin,if=ide  -gdb tcp::5070

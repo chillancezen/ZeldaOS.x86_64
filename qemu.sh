@@ -1,0 +1,1 @@
+/usr/bin/qemu-system-x86_64 -serial tcp::4444,server -m 3024 -kernel Zelda64.bin -monitor null -nographic -vnc :100 -netdev tap,id=demonet0,ifname=demotap0,script=no,downscript=no -device virtio-net-pci,netdev=demonet0,mac=52:53:54:55:56:00 -netdev tap,id=demonet1,ifname=demotap1,script=no,downscript=no -device virtio-net-pci,netdev=demonet1 -gdb tcp::5070

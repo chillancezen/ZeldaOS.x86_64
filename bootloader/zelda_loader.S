@@ -30,38 +30,102 @@ bootloader_main:
     mov %ax, %ss
     mov $INITIAL_STACK_END, %ax
     mov %ax, %sp
-    
-    mov $0x10, %dh
-    mov $0x20, %dl
+    mov $0x07c0, %ax
+    mov %ax, %ds
+
+    // Print some welcome message here.
+    call clear_console
+    mov $copyright_message, %di
+    call printstring
+    movb $0x1, %dh
+    movb $0x0, %dl
     call set_cursor_position
-    
+    mov $hint_message, %di
+    call printstring
+    // wait for key stroke and do left work.
+    call wait_keystoke
+    movb $0x3, %ah
+    movb $0x0, %bh
+    int $0x10
+    inc %dh
+    xor %dl, %dl
+    call set_cursor_position
+
 bootloader_end:
     cli
     hlt
     jmp bootloader_end
 
+/*
+ * AH(out) = scancode
+ * AL(out) = ascii code if it has one
+ */
+ wait_keystoke:
+    movb $0x0, %ah
+    int $0x16
+    ret
 
 /*
- * AH = 0x2
  * DH = the row index
  * DL = the column index
  */
 set_cursor_position:
-    pushw %bx
-    pushw %ax
+    pusha
     mov $0x0, %bh
     mov $0x02, %ah
     int $0x10
-    popw %ax
-    popw %bx
+    popa
+    ret
+
+/*
+ * DI = the address of the string
+ */
+printstring:
+    pusha
+1:
+    cmpb $0x0, (%di)
+    je 2f
+    movb (%di), %al
+    call printchar
+    movb $0x3, %ah
+    movb $0x0, %bh
+    int $0x10
+    inc %dl
+    call set_cursor_position
+    inc %di
+    jmp 1b
+2:  
+    popa
+    ret
+
+/*
+ * al = the character
+ */
+
+printchar:
+    pusha
+    movb $0x09, %ah
+    movw $0x0004, %bx
+    movw $1, %cx
+    int $0x10
+    popa
     ret
 
 
-__row_index: .byte 0x0
-__col_index: .byte 0x0
 clear_console:
-     
-        
+    pusha
+    movb $0x0, %ah
+    movb $0x2, %al
+    int $0x10
+    movb $0x0, %dl
+    movb $0x0, %dh
+    call set_cursor_position
+    popa
+    ret
+// The symbols which reside in the first sectors
+copyright_message: .string "Copyright (c) 2018-2019 Jie Zheng [at] VMware"
+hint_message : .string "Press any key to boot ZeldaOS.x86_64 ..."
+
 // Let the last two bytes be 0x55AA
 .org 0x1fe
     .byte 0x55
@@ -75,4 +139,3 @@ clear_console:
 // Do not put any thing which is needed in earlier stage I below this line
 // ============================================================================
     
-welcome_message : .string "Welcome come to ZeldaOS.x86_64 Bootloader"
