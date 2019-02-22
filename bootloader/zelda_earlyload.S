@@ -5,14 +5,15 @@
  * and the stage II code is self loaded by stage I code.
  * the features are:
  *      1). Loading the kernel into memory.
- *      2). Stay in real address mode and transfer control to kernel..
+ *      2). prepare protected mode context and transfer control to kernel..
  *      3). Optionally encrypt the kernel and prompt a window for user to
  *          deciper it and validate it.
  */
-
+.include "zelda_postboot.inc"
 .code16
 
 .equ INITIAL_STACK_END, 0x7C00
+.equ STAGE2_CODE_START, 0x7e00
 
 .org 0
 bootloader_init:
@@ -33,26 +34,70 @@ bootloader_main:
     mov %ax, %sp
     mov $0x07c0, %ax
     mov %ax, %ds
+    mov %ax, %es
+    mov %ax, %fs
+    mov %ax, %gs
 
-    // Print some welcome message here.
     call clear_console
-    mov $copyright_message, %di
-    call printstring
-    call goto_nextline
-    call goto_nextline
     // Check whether A20 gate is enabled, enable it if the A20 line is disabled
     call check_a20gate
 
-    // Load the kernel into memory
-    mov $loading_message, %di
-    call printstring
-    call goto_nextline
+
+    movw $0x7c0, %ax
+    movw %ax, %es
+
+    movb $0x2, %ah
+    movb $0x1, %al
+    movb $0x2, %cl
+    movb $0x0, %ch
+    movb $0x0, %dh
+    movb $0x80, %dl
+    movw $512, %bx
+    int $0x13
+
+    
+    // Load Global Descriptor Table which only contains basic code
+    // and data privilege level 0 descriptor
+    call load_gdt
+
+    //Switch to protect mode, and reset initial stack.
+    movw $0x10, %dx
+    movw %dx, %ds
+    movw %dx, %ss
+    movw %dx, %es
+    movw %dx, %fs
+    movw %dx, %gs
+    movl $INITIAL_STACK_END, %edx
+    movl %edx, %esp
+    movl %cr0, %edx
+    orl $0x1, %edx
+    movl %edx, %cr0
+    ljmp $0x8, $STAGE2_CODE_START
 
 bootloader_end:
     cli
     hlt
     jmp bootloader_end
 
+load_gdt:
+    pushal
+    movw $gdt_info_offset, %di
+    movl $GDT_BASE, (%di)
+    addl $0x7c00, (%di)
+    movl $GDT_INFO, %eax
+    lgdt (%eax)
+    popal
+    ret
+/*
+ * EAX = logical block address
+ * ECX = size of byte
+ * fs = buffer segment
+ * di = buffer offset 
+ */
+load_sectors:
+    pushal
+    popal
+    ret
 /*
  * This is to check whether the A20 line is enabled, if not, enable it 
  * now ds is 0x07c0, the 0x07c0:0x01fe = 0x7DFE refers to the boot sector
@@ -78,14 +123,10 @@ check_a20gate:
 
     cmpw %ax, %dx
     je 1f
-    mov $a20gate_enabled, %di
-    call printstring
-    call goto_nextline
+    movb $0x1, ($a20_enabled)
     jmp 2f
 1:
-    mov $a20gare_disabled, %di
-    call printstring
-    call goto_nextline
+    movb $0x0, ($a20_enabled)
     // Do fast A20 gate activation.
     // see https://wiki.osdev.org/A20_Line for more detail. 
     inb $0x92, %al
@@ -131,13 +172,13 @@ set_cursor_position:
 /*
  * DI = the address of the string
  */
-printstring:
+print_string:
     pusha
 1:
-    cmpb $0x0, (%di)
+    cmpb $0x0, %ds:(%di)
     je 2f
-    movb (%di), %al
-    call printchar
+    movb %ds:(%di), %al
+    call print_char
     movb $0x3, %ah
     movb $0x0, %bh
     int $0x10
@@ -153,7 +194,7 @@ printstring:
  * al = the character
  */
 
-printchar:
+print_char:
     pusha
     movb $0x09, %ah
     movw $0x0004, %bx
@@ -173,12 +214,39 @@ clear_console:
     call set_cursor_position
     popa
     ret
+
+.align 8
+GDT_INFO:
+    gdt_info_size: .word 0x17
+    gdt_info_offset: .long 0x0
+
+.align 8
+GDT_BASE:
+unsed_descriptor:
+    .long 0x0
+    .long 0x0
+kernel_code_descriptor:
+    .word 0xffff
+    .word 0x0
+    .byte 0x0
+    .byte 0x9a
+    .byte 0xcf
+    .byte 0x0
+kernel_data_descriptor:
+    .word 0xffff
+    .word 0x0
+    .byte 0x0
+    .byte 0x92
+    .byte 0xcf
+    .byte 0x0
+ 
 // The symbols which reside in the first sectors
-copyright_message: .string "Copyright (c) 2018-2019 Jie Zheng [at] VMware"
-hint_message : .string "Press any key to boot ZeldaOS.x86_64 ..."
-a20gate_enabled : .string "[Step 1] Checking A20 gate: enabled"
-a20gare_disabled: .string "[Step 1] Checking A20 gate: disabled"
-loading_message: .string "[Step 2] Loading left sectors"
+a20_enabled     :   .byte 0x0
+lba_address_enabled :   .byte 0x0
+
+
+foo : .string "Hello sector fail"
+bar : .fill 10, 1, 0xff
 // Let the last two bytes be 0x55AA
 .org 0x1fe
     .byte 0x55
@@ -191,5 +259,3 @@ loading_message: .string "[Step 2] Loading left sectors"
 // UNTIL the following content is loaded from disk by stage I code
 // Do not put any thing which is needed in earlier stage I below this line
 // ============================================================================
-
-
