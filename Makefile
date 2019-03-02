@@ -1,4 +1,6 @@
-DIRS = x86_64 kernel device
+DIRS = kernel
+
+include mk/kernel64.mk
 
 
-include mk/Makefile.kernel
+clean: KERNEL_CLEAN

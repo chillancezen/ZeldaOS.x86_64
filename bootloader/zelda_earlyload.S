@@ -28,6 +28,7 @@ bootloader_main:
     // than 1MB ranging 00001000-0009ebff is free to use, and we choose one
     // segment to load the kernel, the kernel may choose whatever it likes to
     // do kernel stuff.
+    // CS,DS, ES, FS, GS = 0x7c0,   SS = 0x0
     xor %ax, %ax
     mov %ax, %ss
     mov $INITIAL_STACK_END, %ax
@@ -40,7 +41,21 @@ bootloader_main:
 
     call clear_console
     // Check whether A20 gate is enabled, enable it if the A20 line is disabled
+    // the physical space which is greater than 1MB is accessable
     call check_a20gate
+
+    // switch to unreal mode by enter protected mode and switch back, but leave
+    // the descriptor cache there untouched afterward.
+    // FS, GS = 0x10
+    call load_gdt
+    movl %cr0, %eax
+    orl $0x1, %eax
+    movl %eax, %cr0
+    movw $0x10, %dx
+    movw %dx, %fs
+    movw %dx, %gs
+    andl $0xfffffffe, %eax
+    movl %eax, %cr0
 
 
     movw $0x7c0, %ax
@@ -55,24 +70,9 @@ bootloader_main:
     movw $512, %bx
     int $0x13
 
-    
-    // Load Global Descriptor Table which only contains basic code
-    // and data privilege level 0 descriptor
-    call load_gdt
-
-    //Switch to protect mode, and reset initial stack.
-    movw $0x10, %dx
-    movw %dx, %ds
-    movw %dx, %ss
-    movw %dx, %es
-    movw %dx, %fs
-    movw %dx, %gs
-    movl $INITIAL_STACK_END, %edx
-    movl %edx, %esp
-    movl %cr0, %edx
-    orl $0x1, %edx
-    movl %edx, %cr0
-    ljmp $0x8, $STAGE2_CODE_START
+    mov $foo, %di
+    call print_string
+        
 
 bootloader_end:
     cli
@@ -245,7 +245,7 @@ a20_enabled     :   .byte 0x0
 lba_address_enabled :   .byte 0x0
 
 
-foo : .string "Hello sector fail"
+foo : .string "Hello ZeldaOS.x86_64"
 bar : .fill 10, 1, 0xff
 // Let the last two bytes be 0x55AA
 .org 0x1fe
