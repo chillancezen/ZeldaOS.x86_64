@@ -9,7 +9,8 @@
  *      3). Optionally encrypt the kernel and prompt a window for user to
  *          deciper it and validate it.
  */
-.include "zelda_postboot.inc"
+.include "kernel64.inc"
+
 .code16
 
 .equ INITIAL_STACK_END, 0x7C00
@@ -69,7 +70,10 @@ bootloader_main:
     movb $0x80, %dl
     movw $512, %bx
     int $0x13
-
+    
+    mov $0x7e00, %di
+    cmpb $0xfa, %gs:(%di)
+    jne bootloader_end
     mov $foo, %di
     call print_string
         

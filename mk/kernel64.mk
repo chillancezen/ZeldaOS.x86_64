@@ -13,6 +13,7 @@ LDPARAMS = -m elf_x86_64 -static
 ELF = Zelda64.elf
 BIN = Zelda64.bin
 MAP = Zelda64.map
+KERNEL_INC = kernel64.inc
 
 C_FILES = $(foreach item,$(DIRS),$(wildcard $(item)/*.c))
 C_OBJS = $(patsubst %.c,%.o,$(C_FILES))
@@ -31,6 +32,8 @@ IMAGE_DEPEND = $(C_OBJS) $(AS_OBJS)
 
 .PHONY:KERNEL_IMAGE
 KERNEL_IMAGE: $(BIN)
+	@echo -n ".equ BOOTMAIN_SIZE, " > $(KERNEL_INC)
+	@wc -c < $(BIN) >> $(KERNEL_INC)
 
 $(ELF): $(IMAGE_DEPEND)
 	@echo "[LD] $@"
@@ -44,5 +47,4 @@ $(BIN):$(ELF)
 .PHONY:KERNEL_CLEAN
 KERNEL_CLEAN:
 	@echo "[Cleaning] kernel"
-	@rm -f $(ELF) $(BIN) $(IMAGE_DEPEND) $(MAP)
-
+	@rm -f $(ELF) $(BIN) $(IMAGE_DEPEND) $(MAP) $(KERNEL_INC)
