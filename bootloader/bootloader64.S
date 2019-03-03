@@ -14,8 +14,8 @@
 .code16
 
 .equ INITIAL_STACK_END, 0x7C00
-.equ STAGE2_CODE_START, 0x7e00
-
+.equ SECTOR_BUFFER, 0x200
+.equ KERNEL_BASE, 0x100000
 .org 0
 bootloader_init:
     .byte 0xea
@@ -58,21 +58,26 @@ bootloader_main:
     andl $0xfffffffe, %eax
     movl %eax, %cr0
 
-
-    movw $0x7c0, %ax
-    movw %ax, %es
-
-    movb $0x2, %ah
-    movb $0x1, %al
-    movb $0x2, %cl
-    movb $0x0, %ch
-    movb $0x0, %dh
+    // Check whether LBA in extended mode is supported in real-mode.
+    movb $0x41, %ah
+    movw $0x55aa, %bx
     movb $0x80, %dl
-    movw $512, %bx
     int $0x13
-    
-    mov $0x7e00, %di
-    cmpb $0xfa, %gs:(%di)
+    jnc lba_supported
+    mov $lba_not_supported, %di
+    call print_string
+    call goto_nextline
+    jmp bootloader_end
+    lba_supported:
+
+    // LBA extended mode supported, we load the disk into memory starting from
+    // 0x100000.
+    movl $KERNEL_BASE, %edi
+    movl $0x1, %esi
+    call load_sector
+
+    mov $(KERNEL_BASE+0x30), %edi
+    cmpb $0x0, %fs:(%edi)
     jne bootloader_end
     mov $foo, %di
     call print_string
@@ -83,6 +88,46 @@ bootloader_end:
     hlt
     jmp bootloader_end
 
+/*
+ * EDI = the destination memory.
+ * ESI = sector index
+ * EAX(out) = 0x0 success, non-0x0, failure
+ */
+__load_sector_ret: .long 0x0
+load_sector:
+    pushal
+    mov $DAP_SECTOR, %edx
+    movl %esi, (%edx)
+    mov $DAP, %esi
+    movb $0x42, %ah
+    movb $0x80, %dl
+    int $0x13
+    // process the bios call result
+    jnc load_sector_success
+    mov $__load_sector_ret, %edx
+    movl $0x1, (%edx)
+    jmp load_sector_out
+    load_sector_success:
+    mov $__load_sector_ret, %edx
+    movl $0x0, (%edx)
+    // Copy the buffer to the address specified in %EDI
+    movl $0x200, %ecx
+    copy_kernel_loop:
+    movl %edi, %edx
+    addl $0x200, %edx
+    subl %ecx, %edx
+    movl $SECTOR_BUFFER, %ebx
+    addl $0x200, %ebx
+    subl %ecx, %ebx
+    movb %ds:(%ebx), %al
+    movb %al, %fs:(%edx)
+    loop copy_kernel_loop
+    load_sector_out:
+    popal
+    mov $__loader_sector_ret, %edi
+    movl (%edi), %eax
+    ret
+
 load_gdt:
     pushal
     movw $gdt_info_offset, %di
@@ -90,16 +135,6 @@ load_gdt:
     addl $0x7c00, (%di)
     movl $GDT_INFO, %eax
     lgdt (%eax)
-    popal
-    ret
-/*
- * EAX = logical block address
- * ECX = size of byte
- * fs = buffer segment
- * di = buffer offset 
- */
-load_sectors:
-    pushal
     popal
     ret
 /*
@@ -243,14 +278,22 @@ kernel_data_descriptor:
     .byte 0x92
     .byte 0xcf
     .byte 0x0
+.align 4
+DAP:
+    .byte 0x10
+    .byte 0x0
+    .word 0x1
+    .word 0x7e00
+    .word 0x0
+DAP_SECTOR: .long 0x0
+    .long 0x0
  
 // The symbols which reside in the first sectors
 a20_enabled     :   .byte 0x0
 lba_address_enabled :   .byte 0x0
 
-
+lba_not_supported: .string "no LBA extended"
 foo : .string "Hello ZeldaOS.x86_64"
-bar : .fill 10, 1, 0xff
 // Let the last two bytes be 0x55AA
 .org 0x1fe
     .byte 0x55

@@ -18,4 +18,5 @@ image: KERNEL_IMAGE BOOTLOADER_IMAGE
 
 .PHONY:run
 run:image
-	qemu-system-x86_64  -monitor null -nographic -vnc :100 -drive file=$(IMAGE),if=ide  -gdb tcp::5070
+	@echo "[RUN] $(IMAGE)"
+	@qemu-system-x86_64  -monitor null -nographic -vnc :100 -drive file=$(IMAGE),if=ide  -gdb tcp::5070
