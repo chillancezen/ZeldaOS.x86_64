@@ -22,6 +22,9 @@ bootloader_init:
     .word 0x10
     .word 0x07C0
 
+__kernel_loading_sector_index: .word 0x0
+__kernel_loading_sector_nr: .word 0x0
+__kernel_loading_sector_base: .long 0x0
 .org 0x10
 bootloader_main:
     cli
@@ -63,26 +66,54 @@ bootloader_main:
     movw $0x55aa, %bx
     movb $0x80, %dl
     int $0x13
-    jnc lba_supported
-    mov $lba_not_supported, %di
-    call print_string
-    call goto_nextline
-    jmp bootloader_end
-    lba_supported:
+    jc bootloader_end
 
     // LBA extended mode supported, we load the disk into memory starting from
     // 0x100000.
-    movl $KERNEL_BASE, %edi
-    movl $0x1, %esi
+    movl $BOOTMAIN_SIZE, %ecx
+    shrl $0x9, %ecx
+    movl $BOOTMAIN_SIZE, %edx
+    andl $0x1ff, %edx
+    cmpl $0x0, %edx
+    je ready_to_load
+    incl %ecx
+    ready_to_load:
+    mov $__kernel_loading_sector_nr, %di
+    movw %cx, (%di)
+    mov $__kernel_loading_sector_base, %di
+    movl $KERNEL_BASE, (%di)
+    kernel_copy_loop:
+    mov $__kernel_loading_sector_index, %si
+    movw (%si), %cx
+    mov $__kernel_loading_sector_nr, %di
+    cmpw %cx, (%di)
+    je kernel_copy_out
+    movw %cx, %si
+    incl %esi
+    mov $__kernel_loading_sector_base, %di
+    movl (%di), %edi
     call load_sector
-
-    mov $(KERNEL_BASE+0x30), %edi
-    cmpb $0x0, %fs:(%edi)
-    jne bootloader_end
-    mov $foo, %di
-    call print_string
-        
-
+    mov $__kernel_loading_sector_index, %si
+    movw (%si), %cx
+    incw %cx
+    movw %cx, (%si)
+    mov $__kernel_loading_sector_base, %di
+    movl (%di), %edx
+    addl $0x200, %edx
+    movl %edx, (%di)
+    jmp kernel_copy_loop
+    kernel_copy_out:
+    //enter protected mode and long jump to kernel entry: 0x100000
+    movl %cr0, %eax
+    orl $0x1, %eax
+    movl %eax, %cr0
+    movw $0x10, %dx
+    movw %dx, %ds
+    movw %dx, %es
+    movw %dx, %ss
+    movl $KERNEL_BASE, %eax
+    ljmpl $0x08, $KERNEL_BASE
+            
 bootloader_end:
     cli
     hlt
@@ -91,9 +122,8 @@ bootloader_end:
 /*
  * EDI = the destination memory.
  * ESI = sector index
- * EAX(out) = 0x0 success, non-0x0, failure
+ * al(out) = 0x0 success, non-0x0, failure
  */
-__load_sector_ret: .long 0x0
 load_sector:
     pushal
     mov $DAP_SECTOR, %edx
@@ -102,14 +132,6 @@ load_sector:
     movb $0x42, %ah
     movb $0x80, %dl
     int $0x13
-    // process the bios call result
-    jnc load_sector_success
-    mov $__load_sector_ret, %edx
-    movl $0x1, (%edx)
-    jmp load_sector_out
-    load_sector_success:
-    mov $__load_sector_ret, %edx
-    movl $0x0, (%edx)
     // Copy the buffer to the address specified in %EDI
     movl $0x200, %ecx
     copy_kernel_loop:
@@ -124,8 +146,6 @@ load_sector:
     loop copy_kernel_loop
     load_sector_out:
     popal
-    mov $__loader_sector_ret, %edi
-    movl (%edi), %eax
     ret
 
 load_gdt:
@@ -289,11 +309,7 @@ DAP_SECTOR: .long 0x0
     .long 0x0
  
 // The symbols which reside in the first sectors
-a20_enabled     :   .byte 0x0
-lba_address_enabled :   .byte 0x0
 
-lba_not_supported: .string "no LBA extended"
-foo : .string "Hello ZeldaOS.x86_64"
 // Let the last two bytes be 0x55AA
 .org 0x1fe
     .byte 0x55
