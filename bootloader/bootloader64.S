@@ -8,7 +8,16 @@
  *      2). prepare protected mode context and transfer control to kernel..
  *      3). Optionally encrypt the kernel and prompt a window for user to
  *          deciper it and validate it.
+ * the Boot sequence is:
+ * 1). long jump to 7c00 + [predefined start], this modify the CS
+ * 2). prepare the initial stack and other segment registers
+ * 3). enable A20 gate
+ * 4). enter unreal mode to enable addressing above 1MB space
+ * 5). operate in LBA mode and load&copy the kernel from disk to memory starting
+ *     at 0x100000
+ * 6). enter protected mode and switch to kernel code
  */
+#include "zelda64_config.h"
 .include "kernel64.inc"
 
 .code16
@@ -18,16 +27,18 @@
 .equ KERNEL_BASE, 0x100000
 .org 0
 bootloader_init:
-    .byte 0xea
-    .word 0x10
-    .word 0x07C0
+    ljmp $0x7c0, $0x0d
+    //.byte 0xea
+    //.word 0x10
+    //.word 0x07C0
 
 __kernel_loading_sector_index: .word 0x0
 __kernel_loading_sector_nr: .word 0x0
 __kernel_loading_sector_base: .long 0x0
-.org 0x10
+.org 0x0d
 bootloader_main:
     cli
+    movl $AP_BOOT_BASE, %eax
     // This is to setup the initial stack, actually, the memory which is lower
     // than 1MB ranging 00001000-0009ebff is free to use, and we choose one
     // segment to load the kernel, the kernel may choose whatever it likes to
@@ -103,7 +114,18 @@ bootloader_main:
     movl %edx, (%di)
     jmp kernel_copy_loop
     kernel_copy_out:
-    //enter protected mode and long jump to kernel entry: 0x100000
+    // install AP jump code to to 4K aligned entry point
+    movw $0x0,  %ax
+    movw %ax, %es
+    movl $AP_JUMP_CODE_START, %esi
+    movl $AP_BOOT_BASE, %edi
+    movl (%esi), %edx
+    movl %edx, %es:(%edi)
+    addl $0x4, %esi
+    addl $0x4, %edi
+    movl (%esi), %edx
+    movl %edx, %es:(%edi)
+    // enter protected mode and long jump to kernel entry: 0x100000
     movl %cr0, %eax
     orl $0x1, %eax
     movl %eax, %cr0
@@ -181,11 +203,8 @@ check_a20gate:
     popw %dx
 
     cmpw %ax, %dx
-    je 1f
-    movb $0x1, ($a20_enabled)
-    jmp 2f
+    jne 2f
 1:
-    movb $0x0, ($a20_enabled)
     // Do fast A20 gate activation.
     // see https://wiki.osdev.org/A20_Line for more detail. 
     inb $0x92, %al
@@ -197,70 +216,6 @@ check_a20gate:
     popa
     ret
 
-goto_nextline:
-    pusha
-    movb $0x3, %ah
-    movb $0x0, %bh
-    int $0x10
-    inc %dh
-    xor %dl, %dl
-    call set_cursor_position
-    popa
-    ret
-/*
- * AH(out) = scancode
- * AL(out) = ascii code if it has one
- */
- wait_keystoke:
-    movb $0x0, %ah
-    int $0x16
-    ret
-
-/*
- * DH = the row index
- * DL = the column index
- */
-set_cursor_position:
-    pusha
-    mov $0x0, %bh
-    mov $0x02, %ah
-    int $0x10
-    popa
-    ret
-
-/*
- * DI = the address of the string
- */
-print_string:
-    pusha
-1:
-    cmpb $0x0, %ds:(%di)
-    je 2f
-    movb %ds:(%di), %al
-    call print_char
-    movb $0x3, %ah
-    movb $0x0, %bh
-    int $0x10
-    inc %dl
-    call set_cursor_position
-    inc %di
-    jmp 1b
-2:  
-    popa
-    ret
-
-/*
- * al = the character
- */
-
-print_char:
-    pusha
-    movb $0x09, %ah
-    movw $0x0004, %bx
-    movw $1, %cx
-    int $0x10
-    popa
-    ret
 
 
 clear_console:
@@ -268,11 +223,27 @@ clear_console:
     movb $0x0, %ah
     movb $0x2, %al
     int $0x10
-    movb $0x0, %dl
-    movb $0x0, %dh
-    call set_cursor_position
     popa
     ret
+
+AP_JUMP_CODE_START:
+    ljmp $0x7c0, $AP_REAL_ENTRANCE
+/*
+ * the real-mode entrance for AP processors
+ * do not use stack here, the kernel code decide whether to allocate a stack for
+ * it. XXX: the GDT_INFO is fully constructed 
+ */
+AP_REAL_ENTRANCE:
+    movw $0x7c0, %dx
+    movw %dx, %ds
+    movl $GDT_INFO, %eax
+    lgdt (%eax)
+    movw $0x10, %dx
+    movw %dx, %ds
+    movw %dx, %es
+    movw %dx, %fs
+    movw %dx, %gs
+    ljmpl $0x08, $KERNEL_BASE
 
 .align 8
 GDT_INFO:

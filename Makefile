@@ -1,4 +1,4 @@
-DIRS = kernel
+DIRS = kernel x86_64 lib64
 
 IMAGE = Zelda64.img
 
@@ -17,6 +17,6 @@ image: KERNEL_IMAGE BOOTLOADER_IMAGE
 
 
 .PHONY:run
-run:image
+run:clean image
 	@echo "[RUN] $(IMAGE)"
 	@qemu-system-x86_64  -monitor null -nographic -vnc :100 -drive file=$(IMAGE),if=ide  -gdb tcp::5070
