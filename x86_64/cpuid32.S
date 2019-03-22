@@ -26,4 +26,20 @@ apic_supported:
 2:
     ret
 
-
+.global msr_supported
+msr_supported:
+    pushal
+    movl $0x1, %eax
+    cpuid
+    andl $CPUID_EDX_FLAG_MSR, %edx
+    jz 1f
+    popal
+    movl $0x1, %eax
+    jmp 2f
+1:
+    popal
+    movl $0x0, %eax
+2:
+    ret
+    
+    
