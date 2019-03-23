@@ -4,6 +4,8 @@
  */
 
 #include "zelda64_config.h"
+#include <x86_64/include/msr.h>
+
 .code32
 .extern kernel_main
 .extern apic_supported
@@ -13,16 +15,126 @@
 .extern broadcast_startup_ipi
 .extern enable_apic
 
+
+.equ IA32_EFER, 0xC0000080
+.equ PAE_FLAG, 0x20
+.equ PSE_FLAG, 0x10
+.equ LONGMODE_ENABLE, 0x100
+.equ PAGE_PRESENT, 0x1
+.equ PAGE_WRITTABLE, 0x2
+.equ PAGE_USER, 0x4
+.equ PAGE_1GB_SIZE, 0x80
+.equ PAGE_2MB_SIZE, 0x80
+.equ CR0_PAGING_ENABLE, 0x80000000
 .section .kernel_initfn
 .global kernel_entry
 kernel_entry:
     movl $BSP_STACK, %esp
-    call check_apic
-    call check_msr
-    call check_bsp
-    call bsp_routines
-    call ap_routines 
-    call kernel_halt
+
+    // Enter IA-32e mode
+    movl %cr4, %edx
+    orl $PAE_FLAG, %edx        
+    movl %edx, %cr4
+    // Install the earlier page table
+    call construct_early_page_table
+    movl $EARLY_PML4_BASE, %eax
+    movl %eax, %cr3
+    call enable_longmode
+    // Activate long mode via enable paging
+    movl %cr0, %eax
+    orl $CR0_PAGING_ENABLE, %eax
+    movl %eax, %cr0
+    ljmpl $0x18, $1f
+    //call kernel_main
+    //call check_apic
+    //call check_msr
+    //call check_bsp
+    //call bsp_routines
+    //call ap_routines 
+    //call kernel_halt
+1:
+    call kernel_main
+    cli
+    hlt
+    jmp 1b
+
+// This is to write IA32_EFER.LME to enable long mode
+enable_longmode:
+    pushal
+    xorl %eax, %eax
+    xorl %edx, %edx
+    movl $IA32_EFER_MSR, %ecx
+    rdmsr
+    orl $IA32_EFER_MSR_LME, %eax
+    wrmsr
+    popal
+    ret
+
+//@param None
+//@return None
+// This is to construct the early paging table for Long Mode
+// as the most large PAGE size is 1G, we need at least one PDPT array to map the
+// first 4G memory
+construct_early_page_table:
+    pushal
+    // clear the PML4 4K page
+    movl $EARLY_PML4_BASE, %edi
+    movl $1024, %ecx
+1:
+    movl $0x0, (%edi)
+    addl $4, %edi
+    loop 1b
+    // install the 0th paging entry
+    // Let %eax hold the low 32bit dword and %edx hold the high 32bit dword
+    xorl %eax, %eax
+    orl $PAGE_PRESENT, %eax
+    orl $PAGE_WRITTABLE, %eax
+    orl $EARLY_PDPT_BASE, %eax
+    movl $EARLY_PML4_BASE, %edi
+    movl %eax, (%edi)
+    movl $0x0, 4(%edi)
+    // clear the whole PDPTE
+    movl $EARLY_PDPT_BASE, %edi
+    movl $1024, %ecx
+2:
+    movl $0x0, (%edi)
+    andl $0x4, %edi
+    loop 2b
+    // install the PDPTE in another 4K page
+    // here we only map the lowest 1G memory, which means we have only 1 PDPTE
+    movl $EARLY_PDPT_BASE, %edi
+    xorl %eax, %eax
+    orl $PAGE_PRESENT, %eax
+    orl $PAGE_WRITTABLE, %eax
+    orl $EARLY_PD_BASE, %eax
+    movl %eax, (%edi)
+    movl $0x0, 4(%edi)
+    // clear the page directory
+    movl $EARLY_PD_BASE, %edi
+    movl $1024, %ecx
+    movl $0x0, %ebx
+3:
+    movl $0x0, (%edi)
+    addl $4, %edi
+    loop 3b
+    // fill the 512 2B page mapping in EARLY_PD_BASE
+    movl $EARLY_PD_BASE, %edi
+    movl $512, %ecx
+    movl $0x0, %ebx
+4:
+    xorl %eax, %eax
+    orl $PAGE_PRESENT, %eax
+    orl $PAGE_WRITTABLE, %eax
+    orl $PAGE_2MB_SIZE, %eax
+    orl %ebx, %eax
+    movl %eax, (%edi)
+    movl $0x0, 4(%edi)
+    addl $8, %edi
+    addl $0x200000, %ebx
+    loop 4b
+    popal
+    ret
+   
 
 //@param None
 //@return None
@@ -39,6 +151,7 @@ bsp_routines:
     movl $100000000, %ecx
     rep nop
     // Send StartUp-IPI to all other processors.
+    call broadcast_startup_ipi
     call broadcast_startup_ipi
 bsp_routines_out:
     ret

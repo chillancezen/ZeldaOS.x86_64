@@ -247,7 +247,7 @@ AP_REAL_ENTRANCE:
 
 .align 8
 GDT_INFO:
-    gdt_info_size: .word 0x17
+    gdt_info_size: .word 0x20
     gdt_info_offset: .long 0x0
 
 .align 8
@@ -268,6 +268,13 @@ kernel_data_descriptor:
     .byte 0x0
     .byte 0x92
     .byte 0xcf
+    .byte 0x0
+longmode_code_descriptor:
+    .word 0xffff
+    .word 0x0
+    .byte 0x0
+    .byte 0x9a
+    .byte 0b10101111
     .byte 0x0
 .align 4
 DAP:
