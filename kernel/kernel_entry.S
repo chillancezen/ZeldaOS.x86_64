@@ -14,7 +14,7 @@
 .extern broadcast_init_ipi
 .extern broadcast_startup_ipi
 .extern enable_apic
-
+.extern gdt_entries
 
 .equ IA32_EFER, 0xC0000080
 .equ PAE_FLAG, 0x20
@@ -44,7 +44,7 @@ kernel_entry:
     movl %cr0, %eax
     orl $CR0_PAGING_ENABLE, %eax
     movl %eax, %cr0
-    ljmpl $0x18, $1f
+    call load_gdt64
     //call kernel_main
     //call check_apic
     //call check_msr
@@ -57,6 +57,23 @@ kernel_entry:
     cli
     hlt
     jmp 1b
+
+load_gdt64:
+    movl $GDT64_offset, %edi
+    movl $gdt_entries, (%edi)
+    movl $GDT64_pointer, %eax
+    lgdt (%eax)
+    movw $0x10, %dx
+    movw %dx, %ds
+    movw %dx, %es
+    movw %dx, %ss
+    ljmp $0x08, $1f
+1:
+    ret
+GDT64_pointer:
+    .word 0x30
+GDT64_offset: .long 0x0
+
 
 // This is to write IA32_EFER.LME to enable long mode
 enable_longmode:

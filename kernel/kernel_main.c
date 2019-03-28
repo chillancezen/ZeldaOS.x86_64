@@ -5,11 +5,12 @@
  */
 #include <lib64/include/type.h>
 #include <kernel/include/kernel.h>
-
+#include <x86_64/include/gdt.h>
+#include <device/include/serial.h>
 extern void * _kernel64_constructor_start;
 extern void * _kernel64_constructor_end;
 
-void
+static void
 pre_init(void)
 {
     uint64_t start_addr = (uint64_t)&_kernel64_constructor_start;
@@ -21,17 +22,19 @@ pre_init(void)
         ((void (*)(void))*(uint64_t *)func_container)();
     }
 }
+
+
+static void
+init0(void)
+{
+}
 void
 kernel_main(void)
 {
 
     pre_init();
+    init0();
     halt();
 }
 
 
-__attribute__((constructor))
-void foo(void)
-{
-    *(char *)0xb8000 = 'H';
-}
