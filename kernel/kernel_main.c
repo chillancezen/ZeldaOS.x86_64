@@ -6,7 +6,7 @@
 #include <lib64/include/type.h>
 #include <kernel/include/kernel.h>
 #include <x86_64/include/gdt.h>
-#include <device/include/serial.h>
+#include <lib64/include/logging.h>
 extern void * _kernel64_constructor_start;
 extern void * _kernel64_constructor_end;
 
@@ -31,9 +31,9 @@ init0(void)
 void
 kernel_main(void)
 {
-
     pre_init();
     init0();
+    LOG_INFO("Kernel is going to halt\n");
     halt();
 }
 

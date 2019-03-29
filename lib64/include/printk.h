@@ -8,9 +8,9 @@
 #define _PRINTK_H
 
 #include <lib64/include/type.h>
-
+//Added one new formatter: %q, for 64-bit integer, output as decimal
 void
-printf(const char * fmt, ...);
+printk(const char * fmt, ...);
 
 #endif
 

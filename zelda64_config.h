@@ -4,6 +4,8 @@
  *  This is the Zelda64 Config File for both bootloader and kernel64
  */
 
+#define DEFAULT_LOGGING_LEVEL LOG_DEBUG
+
 // Note the AP boot address must be lower than 0xVV000 whether VV is the SIPI
 // vector number. it must be 4K aligned
 
