@@ -4,7 +4,7 @@
  *    The init routines.
  */
 #include <lib64/include/type.h>
-#include <kernel/include/kernel.h>
+#include <init/include/kernel.h>
 #include <x86_64/include/gdt.h>
 #include <lib64/include/logging.h>
 extern void * _kernel64_constructor_start;

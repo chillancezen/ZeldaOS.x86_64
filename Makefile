@@ -1,4 +1,4 @@
-DIRS = kernel x86_64 lib64 device
+DIRS = init x86_64 lib64 device
 
 IMAGE = Zelda64.img
 
