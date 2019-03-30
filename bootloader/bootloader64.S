@@ -28,9 +28,6 @@
 .org 0
 bootloader_init:
     ljmp $0x7c0, $0x0d
-    //.byte 0xea
-    //.word 0x10
-    //.word 0x07C0
 
 __kernel_loading_sector_index: .word 0x0
 __kernel_loading_sector_nr: .word 0x0
@@ -38,7 +35,6 @@ __kernel_loading_sector_base: .long 0x0
 .org 0x0d
 bootloader_main:
     cli
-    movl $AP_BOOT_BASE, %eax
     // This is to setup the initial stack, actually, the memory which is lower
     // than 1MB ranging 00001000-0009ebff is free to use, and we choose one
     // segment to load the kernel, the kernel may choose whatever it likes to
@@ -50,11 +46,7 @@ bootloader_main:
     mov %ax, %sp
     mov $0x07c0, %ax
     mov %ax, %ds
-    mov %ax, %es
-    mov %ax, %fs
-    mov %ax, %gs
 
-    call clear_console
     // Check whether A20 gate is enabled, enable it if the A20 line is disabled
     // the physical space which is greater than 1MB is accessable
     call check_a20gate
@@ -72,12 +64,8 @@ bootloader_main:
     andl $0xfffffffe, %eax
     movl %eax, %cr0
 
-    // Check whether LBA in extended mode is supported in real-mode.
-    movb $0x41, %ah
-    movw $0x55aa, %bx
-    movb $0x80, %dl
-    int $0x13
-    jc bootloader_end
+    // Detect physical memory list
+    call detect_physical_memory
 
     // LBA extended mode supported, we load the disk into memory starting from
     // 0x100000.
@@ -131,15 +119,38 @@ bootloader_main:
     movl %eax, %cr0
     movw $0x10, %dx
     movw %dx, %ds
-    movw %dx, %es
     movw %dx, %ss
-    movl $KERNEL_BASE, %eax
     ljmpl $0x08, $KERNEL_BASE
             
-bootloader_end:
-    cli
-    hlt
-    jmp bootloader_end
+
+/*
+ * Detect physical memory with BIOS functions
+ * https://wiki.osdev.org/Detecting_Memory_(x86)#BIOS_Function:_INT_0x15.2C_EAX_.3D_0xE820
+ */
+detect_physical_memory:
+    pushal
+    movw $0x7c0, %ax
+    movw %ax, %es
+    movw $MEMORY_LIST_BASE, %di
+    movw $512, %cx
+1:
+    movl $0x0, %es:(%di)
+    movl $0x0, %es:4(%di)
+    addw $8, %di
+    loop 1b
+    movw $MEMORY_LIST_BASE, %di
+    xorl %ebx, %ebx
+2:
+    movl $0x534d4150, %edx
+    movl $24, %ecx
+    movl $0xe820, %eax
+    int $0x15
+    addw $24, %di
+    cmpl $0x0, %ebx
+    jnz 2b
+ 
+    popal
+    ret
 
 /*
  * EDI = the destination memory.
@@ -191,40 +202,17 @@ load_gdt:
  */
 
 check_a20gate:
-    pusha
-    pushw %es
-    movw $0x01fe, %si
-    pushw (%si)
-
-    movw $0xffff, %ax
-    movw %ax, %es
-    movw $0x7e0e, %di
-    movw %es:(%di), %ax
-    popw %dx
-
-    cmpw %ax, %dx
-    jne 2f
-1:
+    push %ax
     // Do fast A20 gate activation.
     // see https://wiki.osdev.org/A20_Line for more detail. 
     inb $0x92, %al
     or $0x2, %al
     and $0xfe, %al
     outb %al, $0x92
-2:
-    popw %es
-    popa
+    pop %ax
     ret
 
 
-
-clear_console:
-    pusha
-    movb $0x0, %ah
-    movb $0x2, %al
-    int $0x10
-    popa
-    ret
 
 AP_JUMP_CODE_START:
     ljmp $0x7c0, $AP_REAL_ENTRANCE
@@ -247,7 +235,7 @@ AP_REAL_ENTRANCE:
 
 .align 8
 GDT_INFO:
-    gdt_info_size: .word 0x20
+    gdt_info_size: .word 0x18
     gdt_info_offset: .long 0x0
 
 .align 8
@@ -268,13 +256,6 @@ kernel_data_descriptor:
     .byte 0x0
     .byte 0x92
     .byte 0xcf
-    .byte 0x0
-longmode_code_descriptor:
-    .word 0xffff
-    .word 0x0
-    .byte 0x0
-    .byte 0x9a
-    .byte 0b10101111
     .byte 0x0
 .align 4
 DAP:

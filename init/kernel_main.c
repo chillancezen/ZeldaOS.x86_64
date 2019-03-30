@@ -7,6 +7,8 @@
 #include <init/include/kernel.h>
 #include <x86_64/include/gdt.h>
 #include <lib64/include/logging.h>
+#include <memory/include/physical_memory.h>
+
 extern void * _kernel64_constructor_start;
 extern void * _kernel64_constructor_end;
 
@@ -27,6 +29,7 @@ pre_init(void)
 static void
 init0(void)
 {
+    physical_memory_init();
 }
 void
 kernel_main(void)

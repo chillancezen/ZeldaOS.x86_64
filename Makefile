@@ -1,4 +1,4 @@
-DIRS = init x86_64 lib64 device
+DIRS = init x86_64 memory lib64 device
 
 IMAGE = Zelda64.img
 
@@ -19,4 +19,4 @@ image: KERNEL_IMAGE BOOTLOADER_IMAGE
 .PHONY:run
 run:clean image
 	@echo "[RUN] $(IMAGE)"
-	@qemu-system-x86_64 -smp 4 -serial stdio -monitor null -nographic -vnc :100 -drive file=$(IMAGE),if=ide  -gdb tcp::5070
+	@qemu-system-x86_64 -smp 4 -m 4096M -serial stdio -monitor null -nographic -vnc :100 -drive file=$(IMAGE),if=ide  -gdb tcp::5070

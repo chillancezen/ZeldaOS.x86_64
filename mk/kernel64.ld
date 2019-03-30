@@ -32,4 +32,6 @@ SECTIONS
         *(.fini_array*)
         *(.comment*)
     }
+    . = ALIGN(4096);
+    _kernel64_image_end = .;
 }
