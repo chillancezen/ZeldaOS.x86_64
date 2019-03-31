@@ -8,6 +8,8 @@
 #include <x86_64/include/gdt.h>
 #include <lib64/include/logging.h>
 #include <memory/include/physical_memory.h>
+#include <memory/include/paging.h>
+
 
 extern void * _kernel64_constructor_start;
 extern void * _kernel64_constructor_end;
@@ -30,6 +32,7 @@ static void
 init0(void)
 {
     physical_memory_init();
+    paging_init();
 }
 void
 kernel_main(void)
