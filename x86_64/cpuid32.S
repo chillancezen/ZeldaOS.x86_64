@@ -15,7 +15,7 @@ apic_supported:
     pushal
     movl $0x1, %eax
     cpuid
-    andl $CPUID_EDX_FLAG_APIC, %edx
+    andl $CPUID_FEAT_EDX_APIC, %edx
     jz 1f
     popal
     movl $0x1, %eax
@@ -31,7 +31,7 @@ msr_supported:
     pushal
     movl $0x1, %eax
     cpuid
-    andl $CPUID_EDX_FLAG_MSR, %edx
+    andl $CPUID_FEAT_EDX_MSR, %edx
     jz 1f
     popal
     movl $0x1, %eax

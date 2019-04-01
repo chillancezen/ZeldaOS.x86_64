@@ -36,4 +36,10 @@
 #define APIC_ICR_SHORTHAND_ALL 0x80000
 #define APIC_ICR_SHORTHAND_OTHER 0xc0000
 
+#if defined(C_CONTEXT)
+#include <lib64/include/type.h>
+void
+check_x2apic_mode(void);
+#endif
+
 #endif

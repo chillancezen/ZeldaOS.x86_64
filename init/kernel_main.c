@@ -9,7 +9,8 @@
 #include <lib64/include/logging.h>
 #include <memory/include/physical_memory.h>
 #include <memory/include/paging.h>
-
+#include <x86_64/include/cpuid.h>
+#include <x86_64/include/apic.h>
 
 extern void * _kernel64_constructor_start;
 extern void * _kernel64_constructor_end;
@@ -34,11 +35,18 @@ init0(void)
     physical_memory_init();
     paging_init();
 }
+static void
+init1(void)
+{
+    check_basic_cpu_features();
+    check_x2apic_mode();
+}
 void
 kernel_main(void)
 {
     pre_init();
     init0();
+    init1();
     LOG_INFO("Kernel is going to halt\n");
     halt();
 }

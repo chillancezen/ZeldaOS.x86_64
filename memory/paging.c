@@ -36,7 +36,7 @@ paging_init(void)
     __asm__ volatile("movq %%rax, %%cr3;"
                      :
                      :"a"(pml4_base));
-    LOG_INFO("New PML4 base:0x%x\n", pml4_base);
+    LOG_INFO("switch to new PML4 base:0x%x\n", pml4_base);
 }
 
 
