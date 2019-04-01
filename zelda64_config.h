@@ -22,3 +22,6 @@
 // maintain the physical page usage, this bitmap is designed static.
 #define MAX_MEMORY_CAPACITY_IN_GIGABYTE 64
 
+
+// The initial virtual address ceiling which is mapped as 2MB pages
+#define INITIAL_VA_CEILING 0x80000000

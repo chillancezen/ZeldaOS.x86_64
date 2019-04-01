@@ -10,4 +10,15 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+enum ERROR_CODE {
+    ERROR_OK = 0,
+    ERROR_INVALID,
+    ERROR_NOT_NECESSARY,
+    ERROR_DUPLICATION,
+    ERROR_OUT_OF_MEMORY,
+    ERROR_OUT_OF_RESOURCE,
+};
+
+
+
 #endif
