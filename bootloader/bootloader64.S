@@ -103,16 +103,16 @@ bootloader_main:
     jmp kernel_copy_loop
     kernel_copy_out:
     // install AP jump code to to 4K aligned entry point
-    movw $0x0,  %ax
+    movw $0x10,  %ax
     movw %ax, %es
     movl $AP_JUMP_CODE_START, %esi
     movl $AP_BOOT_BASE, %edi
     movl (%esi), %edx
-    movl %edx, %es:(%edi)
+    movl %edx, %gs:(%edi)
     addl $0x4, %esi
     addl $0x4, %edi
     movl (%esi), %edx
-    movl %edx, %es:(%edi)
+    movl %edx, %gs:(%edi)
     // enter protected mode and long jump to kernel entry: 0x100000
     movl %cr0, %eax
     orl $0x1, %eax

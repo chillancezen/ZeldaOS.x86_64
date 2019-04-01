@@ -47,8 +47,8 @@ map_address(uint64_t virt_addr, uint64_t phy_addr, int page_size)
     int l4_index = LEVEL_4_INDEX(virt_addr);
     int l3_index = LEVEL_3_INDEX(virt_addr);
     int l2_index = LEVEL_2_INDEX(virt_addr);
-    int l1_index = LEVEL_2_INDEX(virt_addr);
-
+    int l1_index = LEVEL_1_INDEX(virt_addr);
+    
     // Try to install level 4 entry
     struct pml4_entry * l4_entry =
         l4_index + (struct pml4_entry *)pml4_base;
@@ -114,7 +114,6 @@ map_address(uint64_t virt_addr, uint64_t phy_addr, int page_size)
         l2_table_entry->writable = 1;
         l2_table_entry->pt_entry_address = pt_addr >> PAGE_SHIFT_4K;
     }
-
     // Try to install Level 1 entry
     struct pt_entry * l1_entry = l1_index +
         (struct pt_entry *)(uint64_t)(l2_table_entry->pt_entry_address <<

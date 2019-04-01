@@ -40,6 +40,8 @@ init1(void)
 {
     check_basic_cpu_features();
     check_x2apic_mode();
+
+    local_apic_init();
 }
 void
 kernel_main(void)

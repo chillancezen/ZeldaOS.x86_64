@@ -40,6 +40,11 @@
 #include <lib64/include/type.h>
 void
 check_x2apic_mode(void);
+
+
+void
+local_apic_init(void);
+
 #endif
 
 #endif

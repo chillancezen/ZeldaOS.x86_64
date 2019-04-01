@@ -12,8 +12,17 @@ check_x2apic_mode(void)
     uint32_t eax = 0x1, ebx = 0, ecx = 0, edx = 0;
     CPUID(eax, ebx, ecx, edx);
     if (ecx & CPUID_FEAT_ECX_x2APIC) {
-        LOG_DEBUG("cpu feature:x2apic detected");
+        LOG_DEBUG("cpu feature:x2apic detected\n");
     } else {
-        __not_reach();
+        LOG_DEBUG("cpu feature:x2apic not supported\n");
     }
+}
+
+
+
+
+void
+local_apic_init(void)
+{
+    LOG_INFO("local apic works in legacy mode\n");
 }
