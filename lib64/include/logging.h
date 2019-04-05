@@ -4,6 +4,7 @@
 #ifndef _LOGGING_H
 #define _LOGGING_H
 #include <lib64/include/printk.h>
+#include <x86_64/include/spinlock.h>
 
 enum log_level {
     LOG_TRIVIA = 0,

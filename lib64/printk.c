@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <lib64/include/printk.h>
 #include <device/include/serial.h>
+#include <x86_64/include/spinlock.h>
 
 //#define TEXT_VIDEO_BASE 0xb8000
 
@@ -13,6 +14,8 @@
 
 //static uint8_t vga_shadow_memory[VGA_MAX_ROW+1][VGA_MAX_COL];
 //static uint16_t (*vga_ptr)[VGA_MAX_COL] = (void *)VGA_MEMORY_BASE;
+
+static struct spinlock __print_lock;
 
 #define DEFAULT_RESOLVE_STACK 128
 static void
@@ -59,12 +62,17 @@ resolve_hex_qword(uint64_t qword, uint8_t is_lowercase)
    }
 }
 
+/*
+ * FIXME: substitute the spinlock version with interrupt guarded
+ */
 void
 printk(const char * fmt, ...)
 {
     const char * ptr = fmt;
     va_list arg_ptr;
     va_start(arg_ptr, fmt);
+
+    spinlock_acquire_raw(&__print_lock);
     for (; *ptr; ptr++) {
         if (*ptr != '%') {
             write_serial(*ptr);            
@@ -123,11 +131,12 @@ printk(const char * fmt, ...)
             }
         }
     }
+    spinlock_release_raw(&__print_lock);
     va_end(arg_ptr);
 }
 
 __attribute__((constructor)) static void
 printk_pre_init(void)
 {
-
+    spinlock_init(&__print_lock);
 }

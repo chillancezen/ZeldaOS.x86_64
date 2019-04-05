@@ -34,3 +34,7 @@
 
 // The initial virtual address ceiling which is mapped as 2MB pages
 #define INITIAL_VA_CEILING 0x80000000
+
+
+// The flag to debug
+#define DEBUG 1
