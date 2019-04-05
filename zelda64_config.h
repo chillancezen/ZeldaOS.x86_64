@@ -6,6 +6,10 @@
 
 #define DEFAULT_LOGGING_LEVEL LOG_TRIVIA
 
+// the maximum number of processors supported
+#define MAX_NR_CPUS 64
+#define STACK_SIZE_PER_CPU (2 * 1024 * 1024)
+
 // The physical memory detected from BIOS functions is stored in this page
 #define MEMORY_LIST_BASE 0x8400
 #define MEMORY_LIST_LONG_MODE_BASE (0x7c00 + MEMORY_LIST_BASE)

@@ -28,6 +28,13 @@ lapic_write(uint32_t reg_address, uint32_t value)
     lapic_read(APIC_ID_REGISTER);  
 }
 
+inline uint32_t
+cpu(void)
+{
+    uint32_t id_reg = lapic_read(APIC_ID_REGISTER);
+    return id_reg >> 24;
+}
+
 static inline void
 mask_lvt_entry(uint32_t reg_address)
 {
@@ -123,6 +130,7 @@ loop_and_wait(uint64_t times_to_loop)
 void
 start_other_processors(void)
 {
+    LOG_INFO("booting other processors\n");
     // broadcast INIT IPIs to all other processors
     lapic_write(APIC_ICR_HIGH, 0x0);
     lapic_write(APIC_ICR_LOW, APIC_ICR_SHORTHAND_OTHER |
@@ -130,6 +138,7 @@ start_other_processors(void)
                               APIC_ICR_TRIGGER_LEVEL |
                               APIC_ICR_LEVEL_ASSERT);
     while (lapic_read(APIC_ICR_LOW) & APIC_ICR_DELIVER_STATUS_SENDPENDING);
+    LOG_INFO("broadcast INIT-IPI to APs\n");
     loop_and_wait(100000000);
 
     // broadcast SIPIs to all orther processors
@@ -137,14 +146,7 @@ start_other_processors(void)
     lapic_write(APIC_ICR_LOW, APIC_ICR_SHORTHAND_OTHER |
                               APIC_ICR_DELIVERY_STARTUP |
                               (AP_BOOT_BASE >> 12));
-    while (lapic_read(APIC_ICR_LOW) & APIC_ICR_DELIVER_STATUS_SENDPENDING);
-    loop_and_wait(100000000);
-
-    return ;
-    lapic_write(APIC_ICR_HIGH, 0x0);
-    lapic_write(APIC_ICR_LOW, APIC_ICR_SHORTHAND_OTHER |
-                              APIC_ICR_DELIVERY_STARTUP |
-                              (AP_BOOT_BASE >> 12));
+    LOG_INFO("broadcast SIPI to APs\n");
     while (lapic_read(APIC_ICR_LOW) & APIC_ICR_DELIVER_STATUS_SENDPENDING);
     loop_and_wait(100000000);
 }

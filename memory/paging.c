@@ -39,6 +39,13 @@ paging_init(void)
     LOG_INFO("switch to new PML4 base:0x%x\n", pml4_base);
 }
 
+void
+ap_paging_init(void)
+{
+    __asm__ volatile("movq %%rax, %%cr3;"
+                     :
+                     :"a"(pml4_base));
+}
 
 int32_t
 map_address(uint64_t virt_addr, uint64_t phy_addr, int page_size)

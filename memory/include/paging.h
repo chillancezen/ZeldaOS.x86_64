@@ -72,6 +72,9 @@ struct pt_entry {
 void
 paging_init(void);
 
+void
+ap_paging_init(void);
+
 int32_t
 map_address(uint64_t virt_addr, uint64_t phy_addr, int page_size);
 

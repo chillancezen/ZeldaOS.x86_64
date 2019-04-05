@@ -74,6 +74,11 @@ is_local_apic_enabled(void);
 
 void
 enable_local_apic(void);
+
+
+inline uint32_t
+cpu(void);
+
 #endif
 
 #endif

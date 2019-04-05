@@ -5,9 +5,10 @@
 
 #include "zelda64_config.h"
 #include <x86_64/include/msr.h>
-
+#include <x86_64/include/apic.h>
 .code32
 .extern kernel_main
+.extern kernel_ap_main
 .extern apic_supported
 .extern msr_supported
 .extern check_bootstrap_processor
@@ -29,15 +30,15 @@
 .section .kernel_initfn
 .global kernel_entry
 kernel_entry:
-    // check whether it's a BSP
-    movl $APIC_BASE_MSR, %ecx
-    rdmsr
-    andl $APIC_MSR_BSP_FLAG, %eax
-    cmpl $0x0, %eax
-    je halt
-
     // identifed as the BSP
-    movl $BSP_STACK, %esp
+    movl $APIC_ID_REGISTER, %edi
+    movl (%edi), %eax
+    shrl $24, %eax
+    incl %eax
+    movl $STACK_SIZE_PER_CPU, %ecx
+    mull %ecx
+    addl $SMP_STACK, %eax
+    movl %eax, %esp
 
     // Enter IA-32e mode
     movl %cr4, %edx
@@ -53,29 +54,48 @@ kernel_entry:
     orl $CR0_PAGING_ENABLE, %eax
     movl %eax, %cr0
     call load_gdt64
-    //call kernel_main
-    //call check_apic
-    //call check_msr
-    //call check_bsp
-    //call bsp_routines
-    //call ap_routines 
-    //call kernel_halt
-1:
-    call kernel_main
-halt:
+    //call kernel main
+    jmp kernel_main
     cli
     hlt
-    jmp halt
 
 .org 0x200
 kernel_ap_entry:
     cli
-    movl $0xb8000, %edi
-    movb $49, (%edi)
+    movw $0x10, %dx
+    movw %dx, %ds
+    movw %dx, %es
+    movw %dx, %ss
+    movw %dx, %fs
+    movw %dx, %gs
+    // identify the lapic id and select the stack for it
+    movl $APIC_ID_REGISTER, %edi
+    movl (%edi), %eax
+    shrl $24, %eax
+    incl %eax
+    movl $STACK_SIZE_PER_CPU, %ecx
+    mull %ecx
+    addl $SMP_STACK, %eax
+    movl %eax, %esp
+    // enable IA-32e mode by following the steps in BSP
+    movl %cr4, %edx
+    orl $PAE_FLAG, %edx
+    movl %edx, %cr4
+
+    movl $EARLY_PML4_BASE, %eax
+    movl %eax, %cr3
+    call enable_longmode
+
+    movl %cr0, %eax
+    orl $CR0_PAGING_ENABLE, %eax
+    movl %eax, %cr0
+    call load_gdt64
+    
+    // switch to kernel ap 64-bit code
+    jmp kernel_ap_main
+    cli
     hlt
-    jmp kernel_ap_entry
-.org 0x400
-    nr_cpu: .long 0x0
+
 load_gdt64:
     movl $GDT64_offset, %edi
     movl $gdt_entries, (%edi)
@@ -314,8 +334,12 @@ kernel_halt:
     jmp 1b
     ret
 
-.align 8
+// The STACK space for all processors
 .section .bss
-    .space 4 * 1024 * 1024
-.global BSP_STACK
-BSP_STACK:
+.align 32
+.global SMP_STACK
+.global SMP_STACK_END
+SMP_STACK:
+    .space STACK_SIZE_PER_CPU * MAX_NR_CPUS
+SMP_STACK_END:
+

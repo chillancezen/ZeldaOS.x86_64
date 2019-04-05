@@ -66,4 +66,11 @@ kernel_main(void)
     halt();
 }
 
+void
+kernel_ap_main(void)
+{
+    ap_paging_init();
+    LOG_INFO("AP CPU: %d detected\n", cpu());
+    halt();
+}
 
