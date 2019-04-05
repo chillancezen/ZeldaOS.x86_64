@@ -19,36 +19,31 @@ extern int __log_level;
 
 #define LOG_TRIVIA(format, ...) {\
     if(__log_level <= LOG_TRIVIA) { \
-        printk("[trivia] %s:%d ", __FILE__, __LINE__); \
-        printk(format, ##__VA_ARGS__); \
+        printk("[trivia] %s:%d "format, __FILE__, __LINE__, ##__VA_ARGS__); \
     } \
 }
 
 #define LOG_DEBUG(format, ...) {\
     if (__log_level <= LOG_DEBUG) { \
-        printk("[debug] %s:%d ", __FILE__, __LINE__); \
-        printk(format, ##__VA_ARGS__); \
+        printk("[debug] %s:%d "format, __FILE__, __LINE__, ##__VA_ARGS__); \
     } \
 }
 
 #define LOG_INFO(format, ...) { \
     if (__log_level <= LOG_INFO) { \
-        printk("[info] %s:%d ", __FILE__, __LINE__); \
-        printk(format, ##__VA_ARGS__); \
+        printk("[info] %s:%d "format, __FILE__, __LINE__, ##__VA_ARGS__); \
     } \
 }
 
 #define LOG_ERROR(format, ...) {\
     if (__log_level <= LOG_ERROR) { \
-        printk("[error] %s:%d ", __FILE__, __LINE__); \
-        printk(format, ##__VA_ARGS__); \
+        printk("[error] %s:%d "format, __FILE__, __LINE__, ##__VA_ARGS__); \
     } \
 }
 
 #define LOG_WARN(format, ...) {\
     if (__log_level <= LOG_WARN) { \
-        printk("[warn] %s:%d ", __FILE__, __LINE__); \
-        printk(format, ##__VA_ARGS__); \
+        printk("[warn] %s:%d "format, __FILE__, __LINE__, ##__VA_ARGS__); \
     } \
 }
 
