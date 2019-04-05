@@ -29,6 +29,14 @@
 .section .kernel_initfn
 .global kernel_entry
 kernel_entry:
+    // check whether it's a BSP
+    movl $APIC_BASE_MSR, %ecx
+    rdmsr
+    andl $APIC_MSR_BSP_FLAG, %eax
+    cmpl $0x0, %eax
+    je halt
+
+    // identifed as the BSP
     movl $BSP_STACK, %esp
 
     // Enter IA-32e mode
@@ -54,10 +62,20 @@ kernel_entry:
     //call kernel_halt
 1:
     call kernel_main
+halt:
     cli
     hlt
-    jmp 1b
+    jmp halt
 
+.org 0x200
+kernel_ap_entry:
+    cli
+    movl $0xb8000, %edi
+    movb $49, (%edi)
+    hlt
+    jmp kernel_ap_entry
+.org 0x400
+    nr_cpu: .long 0x0
 load_gdt64:
     movl $GDT64_offset, %edi
     movl $gdt_entries, (%edi)

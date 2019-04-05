@@ -24,7 +24,6 @@
 
 .equ INITIAL_STACK_END, 0x7C00
 .equ SECTOR_BUFFER, 0x200
-.equ KERNEL_BASE, 0x100000
 .org 0
 bootloader_init:
     ljmp $0x7c0, $0x0d
@@ -80,7 +79,7 @@ bootloader_main:
     mov $__kernel_loading_sector_nr, %di
     movw %cx, (%di)
     mov $__kernel_loading_sector_base, %di
-    movl $KERNEL_BASE, (%di)
+    movl $KERNEL_BSP_BASE, (%di)
     kernel_copy_loop:
     mov $__kernel_loading_sector_index, %si
     movw (%si), %cx
@@ -120,7 +119,7 @@ bootloader_main:
     movw $0x10, %dx
     movw %dx, %ds
     movw %dx, %ss
-    ljmpl $0x08, $KERNEL_BASE
+    ljmpl $0x08, $KERNEL_BSP_BASE
             
 
 /*
@@ -226,12 +225,12 @@ AP_REAL_ENTRANCE:
     movw %dx, %ds
     movl $GDT_INFO, %eax
     lgdt (%eax)
+    movl %cr0, %eax
+    orl $0x1, %eax
+    movl %eax, %cr0
     movw $0x10, %dx
     movw %dx, %ds
-    movw %dx, %es
-    movw %dx, %fs
-    movw %dx, %gs
-    ljmpl $0x08, $KERNEL_BASE
+    ljmpl $0x08, $KERNEL_AP_BASE
 
 .align 8
 GDT_INFO:

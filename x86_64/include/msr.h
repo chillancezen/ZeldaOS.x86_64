@@ -15,4 +15,23 @@
 #define IA32_EFER_MSR_LME 0x100
 #define IA32_EFER_MSR_LMA 0x400
 #define IA32_EFER_MSR_NXE 0x800
+
+#if defined(C_CONTEXT)
+#include <lib64/include/type.h>
+
+#define RDMSR(msr, eax, edx) { \
+    __asm__ volatile("rdmsr;" \
+                     :"=a"(*(uint32_t *)(eax)), "=d"(*(uint32_t *)(edx)) \
+                     :"c"((uint32_t)(msr))); \
+}
+
+#define WRMSR(msr, eax, edx) { \
+    __asm__ volatile("wrmsr;" \
+                     : \
+                     :"a"((uint32_t)(eax)), "d"((uint32_t)(edx)), \
+                      "c"((uint32_t)(msr))); \
+}
+
+#endif
+
 #endif
