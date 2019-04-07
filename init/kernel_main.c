@@ -11,6 +11,7 @@
 #include <memory/include/paging.h>
 #include <x86_64/include/cpuid.h>
 #include <x86_64/include/apic.h>
+#include <x86_64/include/interrupt.h>
 
 extern void * _kernel64_constructor_start;
 extern void * _kernel64_constructor_end;
@@ -40,8 +41,8 @@ init1(void)
 {
     check_basic_cpu_features();
     check_x2apic_mode();
-
     local_apic_init();
+    interrupt_init();
 }
 static char * kernel_banner =
 "▒███████▒▓█████  ██▓    ▓█████▄  ▄▄▄          ▒█████    ██████ \n"

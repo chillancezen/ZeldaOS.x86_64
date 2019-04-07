@@ -5,7 +5,7 @@
  */
 
 #include <x86_64/include/gdt.h>
-
+#include <x86_64/include/tss.h>
 
 #define _SEGMENT_BASE 0x0
 #define _SEGMENT_LIMIT -1
