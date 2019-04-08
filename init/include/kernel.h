@@ -4,11 +4,5 @@
 
 #ifndef _KERNEL_H
 #define _KERNEL_H
-
-#define halt() {\
-    __asm__ volatile ("1:cli;" \
-        "hlt;" \
-        "jmp 1b;");\
-}
-
+#include <x86_64/include/misc.h>
 #endif

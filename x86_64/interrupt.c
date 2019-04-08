@@ -5,15 +5,19 @@
 #include <x86_64/include/cpu_state.h>
 #include <x86_64/include/interrupt.h>
 #include <lib64/include/string.h>
+#include <lib64/include/printk.h>
 
 __attribute__((aligned(16)))
 static struct interrupt_gate_descriptor interrupt_desc_table[256];
+
+__attribute__((aligned(64)))
+static struct idt_info idt;
 
 uint64_t
 interrupt_handler(struct cpu_state64 * cpu)
 {
     uint64_t rsp = (uint64_t)cpu;
-
+    printk("%x\n", rsp);
     return rsp;
 }
 
@@ -34,6 +38,16 @@ set_pl0_interrupt_gate(int vector, void (*isr)(void))
     pdesc->offset_32_63 = isr_qword >> 32;
 }
 
+static void
+load_idt(struct idt_info * idt)
+{
+    idt->idt_limit = sizeof(interrupt_desc_table) - 1;
+    idt->idt_base_address = (uint64_t)interrupt_desc_table;
+    __asm__ volatile("lidt %0;"
+                     :
+                     :"m"(idt)
+                     :"cc");
+}
 
 void
 interrupt_init(void)
@@ -296,4 +310,5 @@ interrupt_init(void)
     _(254);
     _(255);
 #undef _
+    load_idt(&idt);
 }

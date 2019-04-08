@@ -28,24 +28,41 @@
 
 
 struct gdt_entry {
-    uint32_t limit_0_15 : 16;
-    uint32_t base_0_15 : 16;
-    uint32_t base_16_23 : 8;
-    uint32_t segment_type : 4;
-    uint32_t segmet_class : 1; //0 = SEG_TYPE_SYSTEM, 1 = SEG_TYPE_APPLICATION
-    uint32_t dpl : 2;
-    uint32_t present : 1;
-    uint32_t limit_16_19 : 4;
-    uint32_t avail : 1;
-    uint32_t long_mode : 1;
-    uint32_t operation_size : 1;
-    uint32_t granularity : 1;
-    uint32_t base_24_31 : 8;
+    uint32_t limit_0_15:16;
+    uint32_t base_0_15:16;
+    uint32_t base_16_23:8;
+    uint32_t segment_type:4;
+    uint32_t segmet_class:1; //0 = SEG_TYPE_SYSTEM, 1 = SEG_TYPE_APPLICATION
+    uint32_t dpl:2;
+    uint32_t present:1;
+    uint32_t limit_16_19:4;
+    uint32_t avail:1;
+    uint32_t long_mode:1;
+    uint32_t operation_size:1;
+    uint32_t granularity:1;
+    uint32_t base_24_31:8;
 }__attribute__((packed));
 
-struct gdt_pointer {
+struct gdt_tss_entry {
+    uint32_t limit_0_15:16;
+    uint32_t base_0_15:16;
+    uint32_t base_16_23:8;
+    uint32_t segment_type:4;
+    uint32_t segmet_class:1; // must be 0
+    uint32_t dpl:2;
+    uint32_t present:1;
+    uint32_t limit_16_19:4;
+    uint32_t avail:1;
+    uint32_t reserved0:2;
+    uint32_t granularity:1; // count in byte
+    uint32_t base_24_31:8;
+    uint32_t base_32_63;
+    uint32_t reserved1;
+}__attribute__((packed));
+
+struct gdt_info {
     uint16_t size;
-    uint32_t offset;
+    uint64_t offset;
 }__attribute__((packed));
 
 void

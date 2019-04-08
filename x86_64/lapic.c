@@ -164,8 +164,14 @@ local_apic_init(void)
     // enable local apic
     enable_local_apic();
     ASSERT(is_local_apic_enabled());
+    // timer init
+    lapic_write(APIC_TDC_REGISTER, 0xb);
+    lapic_write(APIC_TIMER_REGISTER, APIC_TIMER_MODE_PERODIC |
+                                     (IRQ_BASE + IRQ_TIMER));
+    lapic_write(APIC_TIC_REGISTER, 100000);
+
+    //mask_lvt_entry(APIC_TIMER_REGISTER);
     // mask Local APIC timer, LINT0, LINT1, performance counter, 
-    mask_lvt_entry(APIC_TIMER_REGISTER);
     mask_lvt_entry(APIC_LINT0_REGISTER);
     mask_lvt_entry(APIC_LINT1_REGISTER);
     mask_lvt_entry(APIC_PERF_COUNTER_REGISTER);
@@ -177,10 +183,11 @@ local_apic_init(void)
 
     // acknoledge any pending interrupts
     lapic_write(APIC_EOI_REGISTER, 0x0);
-   
+    
+    // enable interrup on this processor   
     lapic_write(APIC_TASK_PRIORITY_REGISTER, 0x0); 
     LOG_INFO("local apic works in legacy mode\n");
     LOG_INFO("local apic enable/disable status:%d\n", is_local_apic_enabled());
     LOG_INFO("local apic base:0x%x\n", local_apic_base());
-    start_other_processors();
+    //start_other_processors();
 }

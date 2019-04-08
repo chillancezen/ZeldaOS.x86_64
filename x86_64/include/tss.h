@@ -21,4 +21,14 @@ struct task_state_segment64{
     uint16_t reserved3;
     uint16_t iomap_base;
 }__attribute__((packed));
+
+void
+set_pl0_rsp(int cpu, uint64_t rsp);
+
+struct task_state_segment64 *
+get_tss_base(void);
+
+void
+task_register_init(void);
+
 #endif

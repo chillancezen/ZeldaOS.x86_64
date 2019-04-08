@@ -12,6 +12,7 @@
 #include <x86_64/include/cpuid.h>
 #include <x86_64/include/apic.h>
 #include <x86_64/include/interrupt.h>
+#include <x86_64/include/tss.h>
 
 extern void * _kernel64_constructor_start;
 extern void * _kernel64_constructor_end;
@@ -33,6 +34,8 @@ pre_init(void)
 static void
 init0(void)
 {
+    gdt64_init();
+    task_register_init();
     physical_memory_init();
     paging_init();
 }
@@ -64,6 +67,10 @@ kernel_main(void)
     init1();
     LOG_INFO("Kernel is going to halt\n");
     printk("%s", kernel_banner);
+    {
+        set_pl0_rsp(0, get_physical_pages(1024));
+    }
+    sti();
     halt();
 }
 

@@ -19,6 +19,11 @@ struct interrupt_gate_descriptor {
     uint32_t reserved2;
 }__attribute__((packed));
 
+struct idt_info {
+    uint16_t idt_limit;
+    uint64_t idt_base_address;
+}__attribute__((packed));
+
 void
 interrupt_init(void);
 
