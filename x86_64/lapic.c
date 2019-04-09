@@ -127,6 +127,12 @@ loop_and_wait(uint64_t times_to_loop)
                      :"c"(times_to_loop));
 }
 
+void
+acknowledge_interrupt(void)
+{
+    lapic_write(APIC_EOI_REGISTER, 0x0);
+}
+
 /*
  * This is to start other APs via sending INIT-SIPI-SIPI sequentially
  * XXX: note the BSP may block while issuing the requests
@@ -168,7 +174,7 @@ local_apic_init(void)
     lapic_write(APIC_TDC_REGISTER, 0xb);
     lapic_write(APIC_TIMER_REGISTER, APIC_TIMER_MODE_PERODIC |
                                      (IRQ_BASE + IRQ_TIMER));
-    lapic_write(APIC_TIC_REGISTER, 100000);
+    lapic_write(APIC_TIC_REGISTER, 10000000);
 
     //mask_lvt_entry(APIC_TIMER_REGISTER);
     // mask Local APIC timer, LINT0, LINT1, performance counter, 

@@ -71,7 +71,10 @@ kernel_main(void)
         set_pl0_rsp(0, get_physical_pages(1024));
     }
     sti();
-    halt();
+    // Loop Forever in halted state
+    while (1) {
+        halt();
+    }
 }
 
 void

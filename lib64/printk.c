@@ -61,18 +61,40 @@ resolve_hex_qword(uint64_t qword, uint8_t is_lowercase)
        write_serial(stack[--iptr]);
    }
 }
+static void
+printk_mp_raw(const char * fmt, va_list arg_ptr);
 
 /*
  * FIXME: substitute the spinlock version with interrupt guarded
  */
 void
-printk(const char * fmt, ...)
+printk(const char *fmt, ...)
+{
+   va_list args;
+   va_start(args, fmt);
+
+   spinlock_acquire_raw(&__print_lock);
+   printk_mp_raw(fmt, args);
+   spinlock_release_raw(&__print_lock);
+
+   va_end(args);
+}
+
+void
+printk_mp_unsafe(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    printk_mp_raw(fmt, args);
+    va_end(args);
+}
+
+
+static void
+printk_mp_raw(const char * fmt, va_list arg_ptr)
 {
     const char * ptr = fmt;
-    va_list arg_ptr;
-    va_start(arg_ptr, fmt);
-
-    spinlock_acquire_raw(&__print_lock);
+    
     for (; *ptr; ptr++) {
         if (*ptr != '%') {
             write_serial(*ptr);            
@@ -131,8 +153,6 @@ printk(const char * fmt, ...)
             }
         }
     }
-    spinlock_release_raw(&__print_lock);
-    va_end(arg_ptr);
 }
 
 __attribute__((constructor)) static void

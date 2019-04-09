@@ -42,4 +42,8 @@ struct cpu_state64 {
     uint64_t rsp;
     uint64_t ss;
 }__attribute__((packed));
+
+void
+dump_cpu_state(struct cpu_state64 * cpu, int mp_safe);
+
 #endif

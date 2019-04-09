@@ -53,7 +53,11 @@ task_register_init(void)
 __attribute__((constructor))
 static void tss_pre_init(void)
 {
+    int idx = 0;
     memset(tss_base, 0x0, sizeof(tss_base));
+    for (idx = 0; idx < MAX_NR_CPUS; idx++) {
+        tss_base[idx].iomap_base = 0x0068;
+    }
 }
 
 

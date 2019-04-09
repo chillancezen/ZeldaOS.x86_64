@@ -59,6 +59,8 @@ per_vector_entry:
     popq %rcx
     popq %rbx
     popq %rax
+    //pop two extra qword which is vector and error_code
+    addq $16, %rsp
     iretq
 
 .macro DEF_INT_ENTRY_WITH_ERRORCODE vectoor

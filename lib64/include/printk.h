@@ -12,5 +12,7 @@
 void
 printk(const char * fmt, ...);
 
+void
+printk_mp_unsafe(const char *fmt, ...);
 #endif
 

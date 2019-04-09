@@ -1,9 +1,11 @@
 /*
  * Copyright (c) 2019 Jie Zheng
  */
+#include <x86_64/include/misc.h>
 #include <x86_64/include/gdt.h>
 #include <x86_64/include/cpu_state.h>
 #include <x86_64/include/interrupt.h>
+#include <x86_64/include/apic.h>
 #include <lib64/include/string.h>
 #include <lib64/include/printk.h>
 
@@ -17,7 +19,13 @@ uint64_t
 interrupt_handler(struct cpu_state64 * cpu)
 {
     uint64_t rsp = (uint64_t)cpu;
-    printk("%x\n", rsp);
+    dump_cpu_state(cpu, 0);
+    if (cpu->vector != 32) {
+        cli();
+        halt();
+
+    }
+    acknowledge_interrupt();
     return rsp;
 }
 
@@ -28,6 +36,7 @@ set_pl0_interrupt_gate(int vector, void (*isr)(void))
     uint64_t isr_qword = (uint64_t)isr;
     struct interrupt_gate_descriptor * pdesc =
         (struct interrupt_gate_descriptor *)&interrupt_desc_table[vector];
+    memset(pdesc, 0x0, sizeof(struct interrupt_gate_descriptor));
     pdesc->selector = KERNEL_CODE_SELECTOR;
     pdesc->ist = 0x0;
     pdesc->type = 0xe; // 0xe: interrupt gate, 0xf: trap gate
@@ -39,10 +48,10 @@ set_pl0_interrupt_gate(int vector, void (*isr)(void))
 }
 
 static void
-load_idt(struct idt_info * idt)
+load_idt(void)
 {
-    idt->idt_limit = sizeof(interrupt_desc_table) - 1;
-    idt->idt_base_address = (uint64_t)interrupt_desc_table;
+    idt.idt_limit = sizeof(interrupt_desc_table) - 1;
+    idt.idt_base_address = (uint64_t)interrupt_desc_table;
     __asm__ volatile("lidt %0;"
                      :
                      :"m"(idt)
@@ -310,5 +319,5 @@ interrupt_init(void)
     _(254);
     _(255);
 #undef _
-    load_idt(&idt);
+    load_idt();
 }

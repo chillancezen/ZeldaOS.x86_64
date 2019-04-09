@@ -80,7 +80,7 @@ initialize_tss_entries(void)
         _tss_segment_entry->dpl = DPL_0;//Let's define it as PL0
         _tss_segment_entry->present = 1;
         _tss_segment_entry->limit_16_19 = tss_limit >> 16;
-        _tss_segment_entry->avail = 1;
+        _tss_segment_entry->avail = 0;
         _tss_segment_entry->granularity = 0;
         _tss_segment_entry->base_24_31 = tss_addr >> 24;
         _tss_segment_entry->base_32_63 = tss_addr >> 32;

@@ -16,7 +16,9 @@ image: KERNEL_IMAGE BOOTLOADER_IMAGE
 	@dd conv=notrunc obs=512 if=$(BIN) of=$(IMAGE) seek=1 status=none
 
 
+# KVM='--enable-kvm'
+# DEBUG = '-d cpu_reset'
 .PHONY:run
 run:clean image
 	@echo "[RUN] $(IMAGE)"
-	@qemu-system-x86_64 $(KVM) -smp 4 -m 4096M -serial stdio -monitor null -nographic -vnc :100 -drive file=$(IMAGE),if=ide  -gdb tcp::5070
+	@qemu-system-x86_64 $(DEBUG) $(KVM) -smp 4 -m 4096M -serial stdio -monitor null -nographic -vnc :100 -drive file=$(IMAGE),if=ide  -gdb tcp::5070
