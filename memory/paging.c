@@ -32,7 +32,6 @@ paging_init(void)
         ASSERT(map_address(virt_addr, virt_addr, PAGE_SIZE_2M) == ERROR_OK);
     }
 
-    ASSERT(map_address(0xfee00000, 0xfee00000, PAGE_SIZE_4K) == ERROR_OK);
     __asm__ volatile("movq %%rax, %%cr3;"
                      :
                      :"a"(pml4_base));

@@ -2,7 +2,7 @@
  * Copyright (c) 2019 Jie Zheng
  */
 
-#include <x86_64/include/apic.h>
+#include <x86_64/include/lapic.h>
 .code32
 .section .text
 

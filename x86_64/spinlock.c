@@ -4,7 +4,7 @@
 #include <x86_64/include/spinlock.h>
 #include <lib64/include/string.h>
 #include <x86_64/include/misc.h>
-#include <x86_64/include/apic.h>
+#include <x86_64/include/lapic.h>
 #include <lib64/include/logging.h>
 void
 spinlock_init(struct spinlock * lock)

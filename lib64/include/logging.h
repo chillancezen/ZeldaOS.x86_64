@@ -23,9 +23,23 @@ extern int __log_level;
     } \
 }
 
+#define LOG_TRIVIA_MP_UNSAFE(format, ...) {\
+    if(__log_level <= LOG_TRIVIA) { \
+        printk_mp_unsafe("[trivia] %s:%d "format, __FILE__, __LINE__, \
+                         ##__VA_ARGS__); \
+    } \
+}
+
 #define LOG_DEBUG(format, ...) {\
     if (__log_level <= LOG_DEBUG) { \
         printk("[debug] %s:%d "format, __FILE__, __LINE__, ##__VA_ARGS__); \
+    } \
+}
+
+#define LOG_DEBUG_MP_UNSAFE(format, ...) {\
+    if (__log_level <= LOG_DEBUG) { \
+        printk_mp_unsafe("[debug] %s:%d "format, __FILE__, __LINE__, \
+                         ##__VA_ARGS__); \
     } \
 }
 
@@ -35,9 +49,23 @@ extern int __log_level;
     } \
 }
 
+#define LOG_INFO_MP_UNSAFE(format, ...) { \
+    if (__log_level <= LOG_INFO) { \
+        printk_mp_unsafe("[info] %s:%d "format, __FILE__, __LINE__, \
+                         ##__VA_ARGS__); \
+    } \
+}
+
 #define LOG_ERROR(format, ...) {\
     if (__log_level <= LOG_ERROR) { \
         printk("[error] %s:%d "format, __FILE__, __LINE__, ##__VA_ARGS__); \
+    } \
+}
+
+#define LOG_ERROR_MP_UNSAFE(format, ...) {\
+    if (__log_level <= LOG_ERROR) { \
+        printk_mp_unsafe("[error] %s:%d "format, __FILE__, __LINE__, \
+                         ##__VA_ARGS__); \
     } \
 }
 
@@ -47,10 +75,18 @@ extern int __log_level;
     } \
 }
 
+#define LOG_WARN_MP_UNSAFE(format, ...) {\
+    if (__log_level <= LOG_WARN) { \
+        printk_mp_unsafe("[warn] %s:%d "format, __FILE__, __LINE__, \
+                         ##__VA_ARGS__); \
+    } \
+}
+
 #define ASSERT(cond) {\
     if (__log_level <= LOG_ASSERT) { \
         if (!(cond)){ \
-            printk("[assert] %s:%d %s failed\n", __FILE__, __LINE__, #cond); \
+            printk_mp_unsafe("[assert] %s:%d %s failed\n", __FILE__, __LINE__, \
+                             #cond); \
             __asm__ volatile("1:cli;" \
                 "hlt;" \
                 "jmp 1b;"); \

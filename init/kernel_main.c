@@ -5,14 +5,17 @@
  */
 #include <lib64/include/type.h>
 #include <init/include/kernel.h>
+#include <init/include/lapic_timer.h>
 #include <x86_64/include/gdt.h>
 #include <lib64/include/logging.h>
 #include <memory/include/physical_memory.h>
 #include <memory/include/paging.h>
 #include <x86_64/include/cpuid.h>
-#include <x86_64/include/apic.h>
+#include <x86_64/include/lapic.h>
 #include <x86_64/include/interrupt.h>
 #include <x86_64/include/tss.h>
+#include <x86_64/include/ioapic.h>
+#include <device/include/keyboard.h>
 
 extern void * _kernel64_constructor_start;
 extern void * _kernel64_constructor_end;
@@ -45,7 +48,15 @@ init1(void)
     check_basic_cpu_features();
     check_x2apic_mode();
     local_apic_init();
+    io_apic_init();
     interrupt_init();
+}
+
+static void
+init2(void)
+{
+    lapic_timer_init();
+    keyboard_init();
 }
 static char * kernel_banner =
 "▒███████▒▓█████  ██▓    ▓█████▄  ▄▄▄          ▒█████    ██████ \n"
@@ -65,6 +76,7 @@ kernel_main(void)
     pre_init();
     init0();
     init1();
+    init2();
     LOG_INFO("Kernel is going to halt\n");
     printk("%s", kernel_banner);
     {

@@ -5,25 +5,38 @@
 #include <x86_64/include/gdt.h>
 #include <x86_64/include/cpu_state.h>
 #include <x86_64/include/interrupt.h>
-#include <x86_64/include/apic.h>
+#include <x86_64/include/lapic.h>
 #include <lib64/include/string.h>
 #include <lib64/include/printk.h>
-
+#include <lib64/include/logging.h>
 __attribute__((aligned(16)))
 static struct interrupt_gate_descriptor interrupt_desc_table[256];
 
 __attribute__((aligned(64)))
 static struct idt_info idt;
 
+static int_handler * handlers[256];
+
+void
+register_interrupt_handler(int vector, int_handler * handler)
+{
+    ASSERT(vector >= 0 && vector < 256);
+    LOG_INFO("Register interrupt handler{vector:%d, entry:0x%x}\n",
+             vector, handler);
+    handlers[vector] = handler;
+}
+
 uint64_t
 interrupt_handler(struct cpu_state64 * cpu)
 {
     uint64_t rsp = (uint64_t)cpu;
-    dump_cpu_state(cpu, 0);
-    if (cpu->vector != 32) {
-        cli();
-        halt();
-
+    int_handler * handler = handlers[cpu->vector];
+    ASSERT(cpu->vector >= 0 && cpu->vector < 256);
+    if (handler) {
+        rsp = handler(cpu);
+    } else {
+        LOG_WARN_MP_UNSAFE("No interrupt handler is found for vector:%d\n",
+                           cpu->vector);
     }
     acknowledge_interrupt();
     return rsp;
@@ -61,6 +74,7 @@ load_idt(void)
 void
 interrupt_init(void)
 {
+    memset(handlers, 0x0, sizeof(handlers));
 #define _(_v) set_pl0_interrupt_gate(_v, int##_v)
     _(0);
     _(1);

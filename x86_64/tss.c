@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2019 Jie Zheng
  */
-#include <x86_64/include/apic.h>
+#include <x86_64/include/lapic.h>
 #include <x86_64/include/tss.h>
 #include <lib64/include/string.h>
 #include <lib64/include/logging.h>

@@ -5,7 +5,7 @@
 
 #include "zelda64_config.h"
 #include <x86_64/include/msr.h>
-#include <x86_64/include/apic.h>
+#include <x86_64/include/lapic.h>
 .code32
 .extern kernel_main
 .extern kernel_ap_main

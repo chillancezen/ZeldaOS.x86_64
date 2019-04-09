@@ -4,8 +4,8 @@
  *    Let the CPU work in xAPIC mode, for now, we don't take care of
  *    x2APIC mode
  */
-#ifndef _APIC_H
-#define _APIC_H
+#ifndef _LAPIC_H
+#define _LAPIC_H
 
 #define APIC_BASE 0xfee00000
 
@@ -53,6 +53,7 @@
 // the 0-32 are reserved for intel
 // the maskable interrupt is ranging from 32 to 255
 #define IRQ_BASE 32
+// As a matter of fact, this is the for local APIC timer, not for intel 8253 PIT
 #define IRQ_TIMER 0
 #define IRQ_KEYBOARD 1
 #define IRQ_ERROR 19

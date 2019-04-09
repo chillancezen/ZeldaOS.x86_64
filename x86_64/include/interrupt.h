@@ -5,6 +5,8 @@
 #define _INTERRUPT_H
 #include <x86_64/include/cpu_state.h>
 
+typedef uint64_t int_handler(struct cpu_state64 *);
+
 struct interrupt_gate_descriptor {
     uint16_t offset_0_15;
     uint16_t selector;
@@ -26,6 +28,9 @@ struct idt_info {
 
 void
 interrupt_init(void);
+
+void
+register_interrupt_handler(int vector, int_handler * handler);
 
 void int0(void);
 void int1(void);

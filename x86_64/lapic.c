@@ -2,10 +2,11 @@
  * Copyright (c) 2019 Jie Zheng
  */
 #include <x86_64/include/cpuid.h>
-#include <x86_64/include/apic.h>
+#include <x86_64/include/lapic.h>
 #include <lib64/include/logging.h>
 #include <x86_64/include/msr.h>
 #include <x86_64/include/ioport.h>
+#include <memory/include/paging.h>
 
 static int is_x2apic_supported = 0;
 
@@ -164,6 +165,8 @@ start_other_processors(void)
 void
 local_apic_init(void)
 {
+    // Map the local APIC configuration page
+    ASSERT(map_address(APIC_BASE, APIC_BASE, PAGE_SIZE_4K) == ERROR_OK);
     // disable master and slave pic
     outb(0xa1, 0xff);
     outb(0x21, 0xff);
