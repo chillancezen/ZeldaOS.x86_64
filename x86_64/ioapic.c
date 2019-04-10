@@ -5,8 +5,7 @@
 #include <x86_64/include/ioapic.h>
 #include <lib64/include/logging.h>
 #include <memory/include/paging.h>
-
-
+#include <x86_64/include/ioport.h>
 
 static void
 ioapic_write(uint32_t offset, uint32_t value)
@@ -32,7 +31,7 @@ void
 ioapic_redirect_entry(uint32_t entry, uint32_t cpu)
 {
     ioapic_write(IOAPIC_OFFSET_RED_TBL(entry), 0x20 + entry);
-    ioapic_write(IOAPIC_OFFSET_RED_TBL(entry), cpu << 24);
+    ioapic_write(IOAPIC_OFFSET_RED_TBL(entry) + 1, cpu << 24);
 }
 
 void
@@ -51,7 +50,7 @@ io_apic_init(void)
     for (idx = 0; idx <= (ioapic_version >> 16); idx++) {
         ioapic_write(IOAPIC_OFFSET_RED_TBL(idx), IOAPIC_REDIRECT_ENTRY_MASKED |
                                                  (0x20 + idx));
-        ioapic_write(IOAPIC_OFFSET_RED_TBL(idx), 0);
+        ioapic_write(IOAPIC_OFFSET_RED_TBL(idx) + 1, 0);
     }
 }
 
