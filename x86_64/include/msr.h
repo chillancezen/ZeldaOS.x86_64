@@ -16,6 +16,10 @@
 #define IA32_EFER_MSR_LMA 0x400
 #define IA32_EFER_MSR_NXE 0x800
 
+#define IA32_FEATURE_CONTROL_MSR 0x3a
+
+#define IA32_VMX_BASIC_MSR 0x480
+
 #if defined(C_CONTEXT)
 #include <lib64/include/type.h>
 

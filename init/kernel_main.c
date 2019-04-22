@@ -16,6 +16,7 @@
 #include <x86_64/include/tss.h>
 #include <x86_64/include/ioapic.h>
 #include <device/include/keyboard.h>
+#include <vm_monitor/include/vmx_misc.h>
 
 extern void * _kernel64_constructor_start;
 extern void * _kernel64_constructor_end;
@@ -58,6 +59,12 @@ init2(void)
     lapic_timer_init();
     keyboard_init();
 }
+
+static void
+init3(void)
+{
+    vm_monitor_init();
+}
 static char * kernel_banner =
 "▒███████▒▓█████  ██▓    ▓█████▄  ▄▄▄          ▒█████    ██████ \n"
 "▒ ▒ ▒ ▄▀░▓█   ▀ ▓██▒    ▒██▀ ██▌▒████▄       ▒██▒  ██▒▒██    ▒ \n"
@@ -77,6 +84,7 @@ kernel_main(void)
     init0();
     init1();
     init2();
+    init3();
     LOG_INFO("Kernel is going to halt\n");
     printk("%s", kernel_banner);
     {

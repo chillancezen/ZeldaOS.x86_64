@@ -1,4 +1,4 @@
-DIRS = init x86_64 memory lib64 device
+DIRS = init x86_64 memory lib64 device vm_monitor
 
 IMAGE = Zelda64.img
 
