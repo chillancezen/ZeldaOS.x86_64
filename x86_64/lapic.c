@@ -198,5 +198,20 @@ local_apic_init(void)
     LOG_INFO("local apic works in legacy mode\n");
     LOG_INFO("local apic enable/disable status:%d\n", is_local_apic_enabled());
     LOG_INFO("local apic base:0x%x\n", local_apic_base());
-    //start_other_processors();
 }
+
+
+void
+local_apic_ap_init(void)
+{
+    int cpuid = cpu();
+    int lapic_map_rc = map_address(APIC_BASE, APIC_BASE, PAGE_SIZE_4K);
+    ASSERT(lapic_map_rc == ERROR_OK ||
+           lapic_map_rc == -ERROR_DUPLICATION);
+    outb(0xa1, 0xff);
+    outb(0x21, 0xff);
+    enable_local_apic();
+    ASSERT(is_local_apic_enabled());
+    LOG_INFO("local apic initilization finished for cpu:%d\n", cpuid);
+}
+

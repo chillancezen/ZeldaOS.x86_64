@@ -11,6 +11,7 @@
 #include <memory/include/paging.h>
 #include <lib64/include/logging.h>
 #include <lib64/include/string.h>
+#include <x86_64/include/lapic.h>
 
 uint64_t pml4_base;
 
@@ -44,6 +45,7 @@ ap_paging_init(void)
     __asm__ volatile("movq %%rax, %%cr3;"
                      :
                      :"a"(pml4_base));
+    LOG_INFO("paging initialization finished for cpu:%d\n", cpu());
 }
 
 int32_t

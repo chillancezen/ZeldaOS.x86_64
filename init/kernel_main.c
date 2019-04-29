@@ -17,9 +17,13 @@
 #include <x86_64/include/ioapic.h>
 #include <device/include/keyboard.h>
 #include <vm_monitor/include/vmx_misc.h>
+#include <x86_64/include/processor_local_storage.h>
+#include <x86_64/include/per_cpu.h>
 
 extern void * _kernel64_constructor_start;
 extern void * _kernel64_constructor_end;
+
+DECLARE_PER_CPU_VARIABLE(uint32_t, foo);
 
 static void
 pre_init(void)
@@ -51,6 +55,8 @@ init1(void)
     local_apic_init();
     io_apic_init();
     interrupt_init();
+    start_other_processors();
+    processor_local_storage_init();
 }
 
 static void
@@ -100,8 +106,21 @@ kernel_main(void)
 void
 kernel_ap_main(void)
 {
+    gdt64_ap_init();
     ap_paging_init();
-    LOG_INFO("AP CPU: %d detected\n", cpu());
-    halt();
+    local_apic_ap_init();
+    interrupt_ap_init();
+    processor_local_storage_ap_init();
+
+#if defined(DEBUG)
+    {
+        //This is to test and verify per-cpu utilization
+        ASSERT(THIS_CPU(uint32_t, foo) == PER_CPU(uint32_t, foo, cpuid()))
+    }
+#endif
+    sti();
+    while (1) {
+        halt();
+    }
 }
 

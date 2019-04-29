@@ -20,6 +20,10 @@
 
 #define IA32_VMX_BASIC_MSR 0x480
 
+#define FSBASE_MSR 0xc0000100
+#define GSBASE_MSR 0xc0000101
+#define KERNEL_GSBASE_MSR 0xc0000102
+
 #if defined(C_CONTEXT)
 #include <lib64/include/type.h>
 

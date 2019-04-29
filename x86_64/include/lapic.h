@@ -66,6 +66,8 @@ check_x2apic_mode(void);
 void
 local_apic_init(void);
 
+void
+local_apic_ap_init(void);
 
 int
 is_bootstrap_processor(void);
@@ -87,6 +89,10 @@ cpu(void);
 
 void
 acknowledge_interrupt(void);
+
+
+void
+start_other_processors(void);
 
 #endif
 

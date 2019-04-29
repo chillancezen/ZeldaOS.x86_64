@@ -7,6 +7,7 @@
 .code64
 
 per_vector_entry:
+    swapgs
     pushq %rax
     pushq %rbx
     pushq %rcx
@@ -61,6 +62,7 @@ per_vector_entry:
     popq %rax
     //pop two extra qword which is vector and error_code
     addq $16, %rsp
+    swapgs
     iretq
 
 .macro DEF_INT_ENTRY_WITH_ERRORCODE vectoor

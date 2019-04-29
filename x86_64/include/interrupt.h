@@ -30,6 +30,9 @@ void
 interrupt_init(void);
 
 void
+interrupt_ap_init(void);
+
+void
 register_interrupt_handler(int vector, int_handler * handler);
 
 void int0(void);

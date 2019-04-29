@@ -68,4 +68,6 @@ struct gdt_info {
 void
 gdt64_init(void);
 
+void
+gdt64_ap_init(void);
 #endif

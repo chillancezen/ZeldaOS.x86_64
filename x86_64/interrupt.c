@@ -335,3 +335,10 @@ interrupt_init(void)
 #undef _
     load_idt();
 }
+
+void
+interrupt_ap_init(void)
+{
+    load_idt();
+    LOG_INFO("IDT initialization finished for cpu:%d\n", cpu());
+}

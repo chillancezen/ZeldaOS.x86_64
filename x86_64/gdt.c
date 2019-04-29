@@ -96,3 +96,9 @@ gdt64_init(void)
     load_gdt(&gdt);
     LOG_INFO("load 64-bit gdt\n");
 }
+
+void
+gdt64_ap_init(void)
+{
+    load_gdt(&gdt); 
+}
