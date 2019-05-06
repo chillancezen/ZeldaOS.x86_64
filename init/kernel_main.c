@@ -19,6 +19,7 @@
 #include <vm_monitor/include/vmx_misc.h>
 #include <x86_64/include/processor_local_storage.h>
 #include <x86_64/include/per_cpu.h>
+#include <x86_64/include/panic.h>
 
 extern void * _kernel64_constructor_start;
 extern void * _kernel64_constructor_end;
@@ -65,11 +66,12 @@ init2(void)
     lapic_timer_init();
     keyboard_init();
 }
-
+#include <lib64/include/string.h>
 static void
 init3(void)
 {
     vm_monitor_init();
+    __not_reach();
 }
 static char * kernel_banner =
 "▒███████▒▓█████  ██▓    ▓█████▄  ▄▄▄          ▒█████    ██████ \n"

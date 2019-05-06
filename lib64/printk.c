@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2019 Jie Zheng
  */
-#include <stdarg.h>
 #include <lib64/include/printk.h>
 #include <device/include/serial.h>
 #include <x86_64/include/spinlock.h>
@@ -18,6 +17,7 @@
 static struct spinlock __print_lock;
 
 #define DEFAULT_RESOLVE_STACK 128
+
 static void
 resolve_qword(uint64_t qword)
 {
@@ -61,8 +61,6 @@ resolve_hex_qword(uint64_t qword, uint8_t is_lowercase)
        write_serial(stack[--iptr]);
    }
 }
-static void
-printk_mp_raw(const char * fmt, va_list arg_ptr);
 
 /*
  * FIXME: substitute the spinlock version with interrupt guarded
@@ -90,7 +88,7 @@ printk_mp_unsafe(const char *fmt, ...)
 }
 
 
-static void
+void
 printk_mp_raw(const char * fmt, va_list arg_ptr)
 {
     const char * ptr = fmt;

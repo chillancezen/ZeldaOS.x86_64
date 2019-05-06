@@ -20,5 +20,7 @@ enum ERROR_CODE {
 };
 
 
+#define LIKELY(exp) __builtin_expect(!!(exp), 1)
+#define UNLIKELY(exp) __builtin_expect(!!(exp), 0)
 
 #endif

@@ -23,4 +23,21 @@
 #define COLOR_YELLOW 0xe
 #define COLOR_WHITE 0xf
 
+#define VIDEO_BUFFER_BASE 0xb8000
+#define VIDEO_BUFFER_ROW 25
+#define VIDEO_BUFFER_COL 80
+
+
+#define CHAR_VIDEO_ADDR(row, col) \
+    ((char *)(uint64_t)(VIDEO_BUFFER_BASE + 2 *((row) * VIDEO_BUFFER_COL + (col))))
+
+void
+set_font_color(int background_color, int front_color);
+
+void
+reset_text(void);
+
+void
+print_text(int idx_row, int idx_col, const char * text);
+
 #endif

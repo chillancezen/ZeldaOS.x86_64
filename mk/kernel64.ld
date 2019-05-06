@@ -8,8 +8,10 @@ SECTIONS
 
     .text BLOCK(4K) : ALIGN(4K)
     {
+        _kernel64_code_start = .;
         *(.kernel_initfn*)
         *(.text*)
+        _kernel64_code_end = .;
         *(.rodata*)
     }
 

@@ -9,11 +9,14 @@
 #define _PROCESSOR_LOCAL_STORAGE
 #include <lib64/include/type.h>
 
+#define CPU_LOCAL_STORAGE_MAGIC 0xdeadbeef
+
 // This structure are packed, do the fileds alignment ourselves inside the
 // structure. and often the per-cpu local area is 4K page aligned.
 struct cpu_local_area {
     // The first word must be cpu idndex.
     uint16_t processor_index;
+    uint32_t magic_number;
     uint16_t tss_selector;
 }__attribute__((packed, aligned(4096)));
 

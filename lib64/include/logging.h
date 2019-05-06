@@ -5,6 +5,7 @@
 #define _LOGGING_H
 #include <lib64/include/printk.h>
 #include <x86_64/include/spinlock.h>
+#include <x86_64/include/panic.h>
 
 enum log_level {
     LOG_TRIVIA = 0,
@@ -82,11 +83,14 @@ extern int __log_level;
     } \
 }
 
+void
+__do_assertion(const char * msg, ...);
+
 #define ASSERT(cond) {\
     if (__log_level <= LOG_ASSERT) { \
         if (!(cond)){ \
-            printk_mp_unsafe("[assert] %s:%d %s failed\n", __FILE__, __LINE__, \
-                             #cond); \
+            __do_assertion("[assert] %s:%d %s failed\n", \
+                           __FILE__, __LINE__, #cond); \
             __asm__ volatile("1:cli;" \
                 "hlt;" \
                 "jmp 1b;"); \

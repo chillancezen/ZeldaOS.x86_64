@@ -45,10 +45,18 @@ get_cpu_local_area(void)
 /*
  * This fast function to retrieve the cpu id, this function can only be called
  * after cpu local storage is initialized
+ * XXX: as an enhancement, here we remove the restriction that the function is
+ * only able to be called after the CPU local storage is initialized. 
  */
 int
 cpuid(void)
 {
+    struct cpu_local_area * _pls = get_cpu_local_area();
+    if (UNLIKELY(_pls->magic_number != CPU_LOCAL_STORAGE_MAGIC)) {
+        // It's much slower if the cpu local storage is not initialized.
+        // but it's worthy, we need to get the cpu index at any stage..
+        return cpu();   
+    }
     return get_cpu_local_area()->processor_index;
 }
 
@@ -59,6 +67,7 @@ processor_local_storage_init(void)
     {
         int _cpu = cpu();
         pls_blob[_cpu].processor_index = _cpu;
+        pls_blob[_cpu].magic_number = CPU_LOCAL_STORAGE_MAGIC;
     }
 }
 

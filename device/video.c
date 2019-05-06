@@ -4,9 +4,6 @@
 #include <device/include/video.h>
 #include <x86_64/include/ioport.h>
 
-#define VIDEO_BUFFER_BASE 0xb8000
-#define VIDEO_BUFFER_ROW 25
-#define VIDEO_BUFFER_COL 80
 
 static void
 disable_cursor(void)
@@ -15,7 +12,7 @@ disable_cursor(void)
     outb(0x3d5, 0x20);
 }
 
-static void
+void
 set_font_color(int background_color, int front_color)
 {
     int idx_row, idx_col;
@@ -29,7 +26,7 @@ set_font_color(int background_color, int front_color)
     }
 }
 
-static void
+void
 reset_text(void)
 {
     int idx_row, idx_col;
@@ -43,7 +40,7 @@ reset_text(void)
     }
 }
 
-static void
+void
 print_text(int idx_row, int idx_col, const char * text)
 {
     uint8_t * ptr = (uint8_t *)(uint64_t)(VIDEO_BUFFER_BASE +

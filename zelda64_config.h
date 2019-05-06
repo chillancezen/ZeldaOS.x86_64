@@ -38,3 +38,6 @@
 
 // The flag to debug
 #define DEBUG 1
+
+// maximum frames to dump in backtrace
+#define MAX_FRAMES_TO_DUMP 32
