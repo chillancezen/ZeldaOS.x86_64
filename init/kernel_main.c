@@ -17,6 +17,7 @@
 #include <x86_64/include/ioapic.h>
 #include <device/include/keyboard.h>
 #include <vm_monitor/include/vmx_misc.h>
+#include <vm_monitor/include/vmx_vmcs.h>
 #include <x86_64/include/processor_local_storage.h>
 #include <x86_64/include/per_cpu.h>
 #include <x86_64/include/panic.h>
@@ -66,12 +67,16 @@ init2(void)
     lapic_timer_init();
     keyboard_init();
 }
-#include <lib64/include/string.h>
+
 static void
 init3(void)
 {
     vm_monitor_init();
-    __not_reach();
+    {
+        struct vmcs_blob vm;
+        pre_initialize_vmcs(&vm);
+        load_vmcs(&vm);
+    }
 }
 static char * kernel_banner =
 "▒███████▒▓█████  ██▓    ▓█████▄  ▄▄▄          ▒█████    ██████ \n"

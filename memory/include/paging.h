@@ -68,6 +68,8 @@ struct pt_entry {
 #define LEVEL_2_INDEX(addr) ((((uint64_t)(addr)) >> 21) & 0x1ff)
 #define LEVEL_1_INDEX(addr) ((((uint64_t)(addr)) >> 12) & 0x1ff)
 
+uint64_t
+pa(uint64_t va);
 
 void
 paging_init(void);

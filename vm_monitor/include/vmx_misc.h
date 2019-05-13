@@ -12,4 +12,8 @@ is_vmx_support(void);
 void
 vm_monitor_init(void);
 
+
+uint32_t
+get_vmx_revision_id(void);
+
 #endif

@@ -48,6 +48,55 @@ ap_paging_init(void)
     LOG_INFO("paging initialization finished for cpu:%d\n", cpu());
 }
 
+
+uint64_t
+pa(uint64_t va)
+{
+    uint64_t _pa;
+    int l4_index = LEVEL_4_INDEX(va);
+    int l3_index = LEVEL_3_INDEX(va);
+    int l2_index = LEVEL_2_INDEX(va);
+    int l1_index = LEVEL_1_INDEX(va);
+
+    struct pml4_entry * l4_entry =
+        l4_index + (struct pml4_entry *)pml4_base;
+    if (!l4_entry->present) {
+        goto translation_error;
+    }
+    struct pdp_entry * l3_entry = l3_index +
+        (struct pdp_entry *)(uint64_t)(l4_entry->pdp_entry_address <<
+                                       PAGE_SHIFT_4K);
+    if (!l3_entry->present) {
+        goto translation_error;
+    }
+    
+    struct pd_2mb_entry * l2_2mb_entry = l2_index +
+        (struct pd_2mb_entry *)(uint64_t)(l3_entry->pd_entry_address <<
+                                          PAGE_SHIFT_4K);
+    if (l2_2mb_entry->present && l2_2mb_entry->page_size) {
+        _pa = l2_2mb_entry->page_2m_address << PAGE_SHIFT_2M;
+        _pa |= va & PAGE_MASK_2M;
+        return _pa; 
+    }
+    struct pd_table_entry * l2_table_entry = l2_index +
+        (struct pd_table_entry *)(uint64_t)(l3_entry->pd_entry_address <<
+                                            PAGE_SHIFT_4K);
+    if (!l2_table_entry->present) {
+        goto translation_error;
+    }
+    struct pt_entry * l1_entry = l1_index +
+        (struct pt_entry *)(uint64_t)(l2_table_entry->pt_entry_address <<
+                                      PAGE_SHIFT_4K);
+    if (!l1_entry->present) {
+        goto translation_error;
+    }
+    _pa = l1_entry->page_address << PAGE_SHIFT_4K;
+    _pa |= va & PAGE_MASK_4K;
+    return _pa;
+
+    translation_error:
+        return -1;
+}
 int32_t
 map_address(uint64_t virt_addr, uint64_t phy_addr, int page_size)
 {
