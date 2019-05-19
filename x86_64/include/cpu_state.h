@@ -6,6 +6,9 @@
 #define _CPU_STATE_H
 #include <lib64/include/type.h>
 
+#define RFLAG_FLAG_CARRY 0x1
+#define RFLAG_FLAG_ZERO 0x40
+
 struct cpu_state64 {
     // general segment registers
     uint64_t ds;
@@ -45,5 +48,41 @@ struct cpu_state64 {
 
 void
 dump_cpu_state(struct cpu_state64 * cpu, int mp_safe);
+
+
+
+static inline uint64_t
+get_cr0(void)
+{
+    uint64_t cr0 = 0;
+    __asm__ volatile("movq %%cr0, %%rax;"
+                     :"=a"(cr0)
+                     :
+                     :"memory");
+    return cr0;
+}
+
+
+static inline uint64_t
+get_cr3(void)
+{
+    uint64_t cr3 = 0;
+    __asm__ volatile("movq %%cr3, %%rax;"
+                     :"=a"(cr3)
+                     :
+                     :"memory");
+    return cr3;
+}
+
+static inline uint64_t
+get_cr4(void)
+{
+    uint64_t cr4 = 0;
+    __asm__ volatile("movq %%cr4, %%rax;"
+                     :"=a"(cr4)
+                     :
+                     :"memory");
+    return cr4;
+}
 
 #endif

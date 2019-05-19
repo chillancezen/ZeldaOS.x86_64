@@ -61,6 +61,7 @@ vm_monitor_init(void)
 
         if (!(eax & VMXON_ENABLE_FLAG)) {
             ecx = IA32_FEATURE_CONTROL_MSR;
+            eax |= VMXON_LOCK_FLAG;
             eax |= VMXON_ENABLE_FLAG;
             WRMSR(ecx, eax, edx);
         }
@@ -71,6 +72,13 @@ vm_monitor_init(void)
                   this_cpu);
     }
     {
+        // Enable NE in CR0, This is fixed bit in VMX CR0
+        __asm__ volatile("movq %%cr0, %%rax;"
+                         "orq %%rdx, %%rax;"
+                         "movq %%rax, %%cr0;"
+                         :
+                         :"d"(0x20)
+                         :"%rax", "memory", "cc");
         // Enable vmx in CR4
         uint64_t cr4;
         __asm__ volatile("movq %%cr4, %%rax;"
@@ -79,6 +87,24 @@ vm_monitor_init(void)
                          :"=a"(cr4)
                          :"d"(VMX_ENABLE_FLAG));
         LOG_INFO("cpu:%d enable vmx enable flag in CR4 register\n", this_cpu);
+    }
+    {
+        // Validate CR0 and CR4 fixed bits
+        uint32_t cr0_fixed0;
+        uint32_t cr0_fixed1;
+        uint32_t cr4_fixed0;
+        uint32_t cr4_fixed1;
+        uint32_t ecx, edx;
+        ecx = IA32_VMX_CR0_FIXED0_MSR;
+        RDMSR(ecx, &cr0_fixed0, &edx);
+        ecx = IA32_VMX_CR0_FIXED1_MSR;
+        RDMSR(ecx, &cr0_fixed1, &edx);
+        ecx = IA32_VMX_CR4_FIXED0_MSR;
+        RDMSR(ecx, &cr4_fixed0, &edx);
+        ecx = IA32_VMX_CR4_FIXED1_MSR;
+        RDMSR(ecx, &cr4_fixed1, &edx);
+        LOG_INFO("CR0 vmx fixed bits:(0x%x, 0x%x)\n", cr0_fixed0, cr0_fixed1);
+        LOG_INFO("CR4 vmx fixed bits:(0x%x, 0x%x)\n", cr4_fixed0, cr4_fixed1);
     }
     {
         // https://www.felixcloutier.com/x86/vmxon
@@ -95,10 +121,10 @@ vm_monitor_init(void)
         uint16_t successfull = 0;
         __asm__ volatile("xorw %%dx, %%dx;"
                          "movw $0x1, %%cx;"
-                         "vmxon (%%rax);"
+                         "vmxon %[VMXON_REGION];"
                          "cmovnc %%cx, %%dx;"
                          :"=d"(successfull)
-                         :"a"(vmxon_region_pa)
+                         :[VMXON_REGION]"m"(vmxon_region_pa)
                          :"memory", "cc", "%rcx");
         ASSERT(successfull);
         LOG_INFO("enter vmx root mode: %s\n",

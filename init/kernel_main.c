@@ -75,7 +75,7 @@ init3(void)
     {
         struct vmcs_blob vm;
         pre_initialize_vmcs(&vm);
-        load_vmcs(&vm);
+        initialize_vmcs(&vm);
     }
 }
 static char * kernel_banner =
