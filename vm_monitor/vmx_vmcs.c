@@ -8,6 +8,10 @@
 #include <lib64/include/logging.h>
 #include <x86_64/include/cpu_state.h>
 #include <x86_64/include/gdt.h>
+#include <x86_64/include/lapic.h>
+#include <x86_64/include/tss.h>
+
+extern void * vm_exit_handler;
 
 int
 pre_initialize_vmcs(struct vmcs_blob * vm)
@@ -16,6 +20,9 @@ pre_initialize_vmcs(struct vmcs_blob * vm)
     vm->regions.guest_region = get_physical_page();
     ASSERT(vm->regions.guest_region);
     ASSERT(vm->regions.guest_region == pa(vm->regions.guest_region));
+
+    vm->host_stack = get_physical_pages(HOST_STACK_NR_PAGES);
+    ASSERT(vm->host_stack);
     return ERROR_OK;
 }
 
@@ -60,12 +67,12 @@ vmx_load(uint64_t vmcs_region)
                -ERROR_INVALID : ERROR_OK;
 }
 
-void
+static void
 initialize_vmcs_host_state(struct vmcs_blob *vm)
 {
-#define _(encoding, value) {\
-    vmx_write((encoding), (value)); \
-    ASSERT(vmx_read((encoding)) == (value)); \
+#define _(encoding, value) {                                                   \
+    ASSERT(vmx_write((encoding), (value)) == ERROR_OK);                        \
+    ASSERT(vmx_read((encoding)) == (value));                                   \
 }
     _(HOST_CR0, get_cr0());
     _(HOST_CR3, get_cr3());
@@ -75,10 +82,31 @@ initialize_vmcs_host_state(struct vmcs_blob *vm)
     _(HOST_SS_SELECTOR, KERNEL_DATA_SELECTOR);
     _(HOST_DS_SELECTOR, KERNEL_DATA_SELECTOR);
     _(HOST_FS_SELECTOR, KERNEL_DATA_SELECTOR);
+    // here Only BSP enters vmx operation, orther cpu MUST NOT enter vmx mode
+    // using this helper function.
     _(HOST_GS_SELECTOR, KERNEL_DATA_SELECTOR);
     _(HOST_TR_SELECTOR, TSS0_SELECTOR);
+    // We do not enable systemcall in cr4.
+    _(HOST_IA32_SYSENTER_CS, 0x0);
+    _(HOST_IA32_SYSENTER_ESP, 0x0);
+    _(HOST_IA32_SYSENTER_EIP, 0x0);
+
+    _(HOST_IDTR_BASE, get_idtr_base());
+    _(HOST_GDTR_BASE, get_gdtr_base());
+    _(HOST_FS_BASE, get_fs_base());
+    _(HOST_GS_BASE, get_gs_base());
+    _(HOST_TR_BASE, (uint64_t)get_tss_base());
+    _(HOST_RSP, vm->host_stack);
+    _(HOST_RSP, (uint64_t)&vm_exit_handler);
 #undef _
 }
+
+static void
+initialize_vmcs_guest_state(struct vmcs_blob *vm)
+{
+
+}
+
 int 
 initialize_vmcs(struct vmcs_blob * vm)
 {
@@ -86,7 +114,7 @@ initialize_vmcs(struct vmcs_blob * vm)
     uint32_t * dword_ptr = (uint32_t *)vm->regions.guest_region;
     dword_ptr[0] = get_vmx_revision_id();
     int rc = vmx_load(vm->regions.guest_region);
-    LOG_INFO("vmx load vmcx:0x%x %s\n",
+    LOG_INFO("vmx load vmcs:0x%x %s\n",
              vm->regions.guest_region,
              rc == ERROR_OK ? "successful" : "unsuccessful");
     if (rc != ERROR_OK) {
@@ -95,6 +123,7 @@ initialize_vmcs(struct vmcs_blob * vm)
 
     // Initialize host-state fields
     initialize_vmcs_host_state(vm);
+    initialize_vmcs_guest_state(vm);
     return ERROR_OK;
 }
 

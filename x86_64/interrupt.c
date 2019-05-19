@@ -69,6 +69,17 @@ load_idt(void)
                      :
                      :"m"(idt)
                      :"cc");
+    {
+        struct idt_info __idt;
+        __asm__ volatile("sidt %0;"
+                         :"=m"(__idt)
+                         :
+                         :"memory");
+        ASSERT(idt.idt_limit == __idt.idt_limit);
+        ASSERT(idt.idt_base_address == __idt.idt_base_address);
+        LOG_INFO("cpu:%d idt base: 0x%x\n",cpu(), __idt.idt_limit);
+        LOG_INFO("cpu:%d idt limit: 0x%x\n",cpu(),  __idt.idt_base_address);
+    }
 }
 
 void

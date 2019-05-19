@@ -8,6 +8,7 @@
 #include <x86_64/include/tss.h>
 #include <lib64/include/logging.h>
 #include <lib64/include/string.h>
+#include <x86_64/include/lapic.h>
 
 #define _SEGMENT_BASE 0x0
 #define _SEGMENT_LIMIT -1
@@ -57,6 +58,8 @@ load_gdt(struct gdt_info * gdt)
                          :"memory");
         ASSERT(_gdt.size == gdt->size);
         ASSERT(_gdt.offset == gdt->offset);
+        LOG_INFO("cpu:%d gdt limit:0x%x\n", cpu(), _gdt.size);
+        LOG_INFO("cpu:%d gdt base:0x%x\n", cpu(), _gdt.offset);        
     }
 }
 static void
@@ -94,7 +97,6 @@ gdt64_init(void)
     ASSERT(sizeof(struct gdt_tss_entry) == 16)
     initialize_tss_entries();
     load_gdt(&gdt);
-    LOG_INFO("load 64-bit gdt\n");
 }
 
 void

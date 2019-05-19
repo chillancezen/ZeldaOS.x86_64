@@ -4,7 +4,48 @@
 
 #include <x86_64/include/cpu_state.h>
 #include <lib64/include/printk.h>
+#include <x86_64/include/interrupt.h>
+#include <x86_64/include/gdt.h>
+#include <lib64/include/logging.h>
+#include <x86_64/include/msr.h>
 
+uint64_t
+get_idtr_base(void)
+{
+    struct idt_info _idt;
+    __asm__ volatile ("sidt (%%rax);"
+                      :
+                      :"a"(&_idt)
+                      :"memory");
+    return _idt.idt_base_address;
+}
+
+uint64_t
+get_gdtr_base(void)
+{
+    struct gdt_info _gdt;
+    __asm__ volatile ("sgdt (%%rax);"
+                      :
+                      :"a"(&_gdt)
+                      :"memory");
+    return _gdt.offset;
+}
+
+uint64_t
+get_fs_base(void)
+{
+    uint32_t eax, edx;
+    RDMSR(FSBASE_MSR, &eax, &edx);
+    return eax | (((uint64_t)edx) << 32);
+}
+
+uint64_t
+get_gs_base(void)
+{
+    uint32_t eax, edx;
+    RDMSR(GSBASE_MSR, &eax, &edx);
+    return eax | (((uint64_t)edx) << 32);
+}
 
 void
 dump_cpu_state(struct cpu_state64 * cpu, int mp_safe)

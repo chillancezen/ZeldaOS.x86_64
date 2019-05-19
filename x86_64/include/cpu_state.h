@@ -85,4 +85,15 @@ get_cr4(void)
     return cr4;
 }
 
+uint64_t
+get_idtr_base(void);
+
+uint64_t
+get_gdtr_base(void);
+
+uint64_t
+get_fs_base(void);
+
+uint64_t
+get_gs_base(void);
 #endif

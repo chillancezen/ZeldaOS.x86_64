@@ -36,7 +36,16 @@
 #define HOST_RSP 0x00006C14
 #define HOST_RIP 0x00006C16
 
-
+#define GUEST_ES_SELECTOR 0x00000800
+#define GUEST_CS_SELECTOR 0x00000802
+#define GUEST_SS_SELECTOR 0x00000804
+#define GUEST_DS_SELECTOR 0x00000806
+#define GUEST_FS_SELECTOR 0x00000808
+#define GUEST_GS_SELECTOR 0x0000080A
+#define GUEST_LDTR_SELECTOR 0x0000080C
+#define GUEST_TR_SELECTOR 0x0000080E
+#define GUEST_INTERRUPT_STATUS 0x00000810
+#define GUEST_PML_INDEX 0x00000812
 struct vmcs_region {
     uint64_t guest_region;
     uint64_t io_bitmap_region0;
@@ -45,8 +54,11 @@ struct vmcs_region {
     uint64_t virtual_apic_region;
 };
 
+#define HOST_STACK_NR_PAGES 0x8 // 32K is supposed to be enough
+
 struct vmcs_blob {
     struct vmcs_region regions;
+    uint64_t host_stack;
 };
 
 int

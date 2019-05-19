@@ -59,8 +59,8 @@ read_auxiliary_state(struct auxiliary_state64 * stat)
                       :
                       :"a"(&_idt)
                       :"memory");
-    stat->gdt_base = _idt.idt_base_address;
-    stat->gdt_size = _idt.idt_limit;
+    stat->idt_base = _idt.idt_base_address;
+    stat->idt_size = _idt.idt_limit;
 
 }
 
