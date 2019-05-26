@@ -9,6 +9,13 @@
 #define RFLAG_FLAG_CARRY 0x1
 #define RFLAG_FLAG_ZERO 0x40
 
+#define CR0_PE 1
+#define CR0_NE (1 << 5)
+#define CR0_PG (1 << 31)
+
+#define CR4_PAE (1 << 5)
+#define CR4_VMXE (1 << 13)
+
 struct cpu_state64 {
     // general segment registers
     uint64_t ds;
