@@ -94,10 +94,13 @@
 #define GUEST_SMBASE 0x00004828
 #define GUEST_IA32_SYSENTER_CS 0x0000482A
 #define GUEST_VMX_PREEMPTION_TIMER 0x0000482E
-
 // Appendix b.2.3
 #define GUEST_VMCS_LINK_POINTER_LOW 0x00002800
 #define GUEST_VMCS_LINK_POINTER_HIGH 0x00002801
+
+
+//Appendix B.3.1
+#define CTLS_PIN_BASED_VM_EXECUTION 0x00004000
 struct vmcs_region {
     uint64_t guest_region;
     uint64_t io_bitmap_region0;
