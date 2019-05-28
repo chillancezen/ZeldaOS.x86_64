@@ -89,7 +89,7 @@ __do_assertion(const char * msg, ...);
 #define ASSERT(cond) {\
     if (__log_level <= LOG_ASSERT) { \
         if (!(cond)){ \
-            __do_assertion("[assert] %s:%d %s failed\n", \
+            __do_assertion("[assert] %s:%d assertion:%s failed\n", \
                            __FILE__, __LINE__, #cond); \
             __asm__ volatile("1:cli;" \
                 "hlt;" \

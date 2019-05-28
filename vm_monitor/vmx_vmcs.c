@@ -172,7 +172,7 @@ initialize_vmcs_guest_state(struct vmcs_blob *vm)
 }
 
 static int
-validate_capability_dword(uint64_t target, uint32_t allowed0, uint32_t allowed1)
+validate_vmx_capability(uint64_t target, uint32_t allowed0, uint32_t allowed1)
 {
     int idx = 0;
     for (idx = 0; idx < 32; idx++) {
@@ -233,8 +233,8 @@ initialize_vmcs_pinbased_control(struct vmcs_blob *vm)
                                                      pinbased_msr_eax);
     pinbased_vm_execution_ctrl = fix_reserved_0_bits(pinbased_vm_execution_ctrl,
                                                      pinbased_msr_edx);
-    ASSERT(validate_capability_dword(pinbased_vm_execution_ctrl,
-                                     pinbased_msr_eax, pinbased_msr_edx) ==
+    ASSERT(validate_vmx_capability(pinbased_vm_execution_ctrl,
+                                   pinbased_msr_eax, pinbased_msr_edx) ==
            ERROR_OK);
     LOG_DEBUG("vmx pinbased.msr.dword:0x%x\n", pinbased_vm_execution_ctrl);
     VMXWRITE(CTLS_PIN_BASED_VM_EXECUTION, pinbased_vm_execution_ctrl);
@@ -243,7 +243,43 @@ initialize_vmcs_pinbased_control(struct vmcs_blob *vm)
 static void
 initialize_vmcs_procbased_control(struct vmcs_blob *vm)
 {
-    
+    uint32_t vpid_and_ept_msr_eax, vpid_and_ept_msr_edx;
+    uint32_t pri_procbased_msr_eax, pri_procbased_msr_edx;
+    uint32_t sec_procbased_msr_eax, sec_procbased_msr_edx;
+    // See Appendix A.3.2, Appendix A.10 and Appendix A.3.3
+    RDMSR(IA32_VMX_EPT_VPID_CAP_MSR, &vpid_and_ept_msr_eax,
+          &vpid_and_ept_msr_edx);
+    RDMSR(IA32_VMX_PRI_PROCBASED_CTLS_MSR, &pri_procbased_msr_eax,
+          &pri_procbased_msr_edx);
+    RDMSR(IA32_VMX_SEC_PROCBASED_CTLS_MSR, &sec_procbased_msr_eax,
+          &sec_procbased_msr_edx);
+    LOG_DEBUG("vmx ept and vpid cap msr.eax:0x%x\n", vpid_and_ept_msr_eax);
+    LOG_DEBUG("vmx ept and vpid cap msr.edx:0x%x\n", vpid_and_ept_msr_edx);
+    LOG_DEBUG("vmx primary procbased.msr.eax:0x%x\n", pri_procbased_msr_eax);
+    LOG_DEBUG("vmx primary procbased.msr.edx:0x%x\n", pri_procbased_msr_edx);
+    LOG_DEBUG("vmx second procbased.msr.eax:0x%x\n", sec_procbased_msr_eax);
+    LOG_DEBUG("vmx second procbased.msr.edx:0x%x\n", sec_procbased_msr_edx);
+    // Examine basic ept and vpid capability.
+    ASSERT(vpid_and_ept_msr_eax & 0x1);
+    ASSERT(vpid_and_ept_msr_eax & (1 << 14));
+    ASSERT(vpid_and_ept_msr_edx & 0x1);
+    {
+        // primary process based execution control, See Table 24-6
+        uint32_t pri_procbase_ctls = 0;
+        pri_procbase_ctls |= 1 << 7; // Hlt causes vm exit
+        pri_procbase_ctls |= 1 << 9; // INVLPG causes vm exit
+        pri_procbase_ctls |= 1 << 15; // CR3-load causes vm exit
+        pri_procbase_ctls |= 1 << 16; // CR3-store causes vm exit
+        pri_procbase_ctls |= 1 << 25; // Use IO bitmap
+        pri_procbase_ctls |= 1 << 30; // PAUSE causes vm exit
+        pri_procbase_ctls |= 1 << 31; // activate secondary controls
+        pri_procbase_ctls = fix_reserved_1_bits(pri_procbase_ctls,
+                                                pri_procbased_msr_eax);
+        pri_procbase_ctls = fix_reserved_0_bits(pri_procbase_ctls,
+                                                pri_procbased_msr_edx);
+        ASSERT(validate_vmx_capability(pri_procbase_ctls, pri_procbased_msr_eax,
+                                       pri_procbased_msr_edx) == ERROR_OK);
+    }
 }
 
 
