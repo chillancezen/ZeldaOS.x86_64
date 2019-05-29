@@ -101,12 +101,21 @@
 
 //Appendix B.3.1
 #define CTLS_PIN_BASED_VM_EXECUTION 0x00004000
+#define CTLS_PRI_PROC_BASED_VM_EXECUTION 0x00004002
+#define CTLS_SEC_PROC_BASED_VM_EXECUTION 0x0000401E
+#define CTLS_EXCEPTION_BITMAP 0x00004004
+#define CTLS_IO_BITMAP_A 0x00002000
+#define CTLS_IO_BITMAP_B 0x00002002
+#define CTLS_VM_EXIT 0x0000400C
+#define CTLS_VM_ENTRY 0x00004012
+
 struct vmcs_region {
     uint64_t guest_region;
     uint64_t io_bitmap_region0;
     uint64_t io_bitmap_region1;
-    uint64_t msr_bitmap_region;
     uint64_t virtual_apic_region;
+    uint64_t msr_guest_region;
+    uint64_t msr_host_region;
 };
 
 #define HOST_STACK_NR_PAGES 0x8 // 32K is supposed to be enough
@@ -115,6 +124,13 @@ struct vmcs_blob {
     struct vmcs_region regions;
     uint64_t host_stack;
 };
+
+struct vmcs_msr_blob {
+    uint32_t index;
+    uint32_t reserved;
+    uint32_t msr_eax;
+    uint32_t msr_edx;
+}__attribute__((packed));
 
 int
 pre_initialize_vmcs(struct vmcs_blob * vm);

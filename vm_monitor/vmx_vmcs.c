@@ -279,7 +279,34 @@ initialize_vmcs_procbased_control(struct vmcs_blob *vm)
                                                 pri_procbased_msr_edx);
         ASSERT(validate_vmx_capability(pri_procbase_ctls, pri_procbased_msr_eax,
                                        pri_procbased_msr_edx) == ERROR_OK);
+        VMXWRITE(CTLS_PRI_PROC_BASED_VM_EXECUTION, pri_procbase_ctls);
+        LOG_DEBUG("vmx pri.procbased.msr.dword:0x%x\n", pri_procbase_ctls);
     }
+    {
+        // second process based execution control, see Table 24-7
+        uint32_t sec_procbase_ctls = 0;
+        sec_procbase_ctls |= 1 << 1; // use EPT
+        sec_procbase_ctls |= 1 << 2; // descriptor-table exiting:GDT/LDT/IDT/TR
+        sec_procbase_ctls |= 1 << 5; // enable VPID
+        sec_procbase_ctls |= 1 << 7; // unrestricted guest
+        sec_procbase_ctls = fix_reserved_1_bits(sec_procbase_ctls,
+                                                sec_procbased_msr_eax);
+        sec_procbase_ctls = fix_reserved_0_bits(sec_procbase_ctls,
+                                                sec_procbased_msr_edx);
+        ASSERT(validate_vmx_capability(sec_procbase_ctls, sec_procbased_msr_eax,
+                                       sec_procbased_msr_edx) == ERROR_OK);
+        VMXWRITE(CTLS_SEC_PROC_BASED_VM_EXECUTION, sec_procbase_ctls);
+        LOG_DEBUG("vmx sec.procbased.msr.dword:0x%x\n", sec_procbase_ctls);
+    }
+    {
+        // Exception bitmap, see 6.15 for all the exception reference.
+        // we want no exception cause vm exits here
+        uint32_t exception_bitmap = 0;
+        VMXWRITE(CTLS_EXCEPTION_BITMAP, exception_bitmap);
+        // Set the IO bitmap
+        VMXWRITE(CTLS_IO_BITMAP_A, vm->regions.io_bitmap_region0);
+        VMXWRITE(CTLS_IO_BITMAP_B, vm->regions.io_bitmap_region1);
+        }
 }
 
 
@@ -334,6 +361,24 @@ initialize_vmcs_execution_control(struct vmcs_blob *vm)
     initialize_vmcs_procbased_control(vm);
 }
 
+static void
+initialize_vmcs_vm_exit_control(struct vmcs_blob * vm)
+{
+    uint32_t vm_exit_msr_eax, vm_exit_msr_edx;
+    RDMSR(IA32_VMX_VM_EXIT_CTLS_MSR, &vm_exit_msr_eax, &vm_exit_msr_edx);
+    LOG_DEBUG("vmx vm.exit.ctls.eax:0x%x\n", vm_exit_msr_eax);
+    LOG_DEBUG("vmx vm.exit.ctls.edx:0x%x\n", vm_exit_msr_edx);
+    uint32_t vm_exit_ctls = 0;
+    vm_exit_ctls |= 1 << 9; // VM exit to 64-bit long mode.
+    vm_exit_ctls |= 1 << 15; // ACK external interrupts.
+    vm_exit_ctls = fix_reserved_1_bits(vm_exit_ctls, vm_exit_msr_eax);
+    vm_exit_ctls = fix_reserved_0_bits(vm_exit_ctls, vm_exit_msr_edx);
+    ASSERT(validate_vmx_capability(vm_exit_ctls, vm_exit_msr_eax,
+                                   vm_exit_msr_edx) == ERROR_OK);
+    VMXWRITE(CTLS_VM_EXIT, vm_exit_ctls);
+    LOG_DEBUG("vmx vm.exit.ctls:0x%x\n", vm_exit_ctls);
+}
+
 int 
 initialize_vmcs(struct vmcs_blob * vm)
 {
@@ -352,6 +397,7 @@ initialize_vmcs(struct vmcs_blob * vm)
     initialize_vmcs_host_state(vm);
     initialize_vmcs_guest_state(vm);
     initialize_vmcs_execution_control(vm);
+    initialize_vmcs_vm_exit_control(vm);
     return ERROR_OK;
 }
 
