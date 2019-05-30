@@ -3,6 +3,7 @@
  */
 #include <vm_monitor/include/vmx_vmcs.h>
 #include <vm_monitor/include/vmx_misc.h>
+#include <vm_monitor/include/vmx_ept.h>
 #include <memory/include/paging.h>
 #include <lib64/include/string.h>
 #include <lib64/include/logging.h>
@@ -33,10 +34,14 @@ pre_initialize_vmcs(struct vmcs_blob * vm)
     vm->regions.guest_region = get_physical_page();
     vm->regions.io_bitmap_region0 = get_physical_page();
     vm->regions.io_bitmap_region1 = get_physical_page();
+    vm->regions.vm_exit_store_msr_region = get_physical_page();
+    vm->regions.vm_exit_load_msr_region = get_physical_page();
     vm->host_stack = get_physical_pages(HOST_STACK_NR_PAGES);
     _(vm->regions.guest_region);
     _(vm->regions.io_bitmap_region0);
     _(vm->regions.io_bitmap_region1);
+    _(vm->regions.vm_exit_store_msr_region);
+    _(vm->regions.vm_exit_load_msr_region);
     _(vm->host_stack);
     return ERROR_OK;
 #undef _
@@ -361,6 +366,38 @@ initialize_vmcs_execution_control(struct vmcs_blob *vm)
     initialize_vmcs_procbased_control(vm);
 }
 
+
+static void
+initialize_vmcs_vm_exit_msr(struct vmcs_blob * vm)
+{
+    memset((void *)vm->regions.vm_exit_store_msr_region, 0x0, PAGE_SIZE_4K);
+    memset((void *)vm->regions.vm_exit_load_msr_region, 0x0, PAGE_SIZE_4K);
+    uint32_t predefined_msrs[] = {IA32_EFER_MSR};
+    int nr_msrs = sizeof(predefined_msrs) / sizeof(uint32_t);
+    vm->regions.vm_exit_load_msr_count = nr_msrs;
+    vm->regions.vm_exit_store_msr_count = nr_msrs;
+    int index = 0;
+    for (index = 0; index < nr_msrs; index++) {
+        struct vmcs_msr_blob * vmcs_msr =
+            ((struct vmcs_msr_blob *)vm->regions.vm_exit_store_msr_region) +
+            index;
+        vmcs_msr->index = predefined_msrs[index];
+        vmcs_msr->reserved = 0;
+        RDMSR(vmcs_msr->index, &vmcs_msr->msr_eax, &vmcs_msr->msr_edx);
+
+        vmcs_msr =
+            ((struct vmcs_msr_blob *)vm->regions.vm_exit_load_msr_region) +
+            index;
+        vmcs_msr->index = predefined_msrs[index];
+        vmcs_msr->reserved = 0;
+        RDMSR(vmcs_msr->index, &vmcs_msr->msr_eax, &vmcs_msr->msr_edx);
+    }
+    VMXWRITE(CTLS_VM_EXIT_MSR_STORE_COUNT, vm->regions.vm_exit_store_msr_count);
+    VMXWRITE(CTLS_VM_EXIT_MSR_LOAD_COUNT, vm->regions.vm_exit_load_msr_count);
+    VMXWRITE(CTLS_VM_EXIT_MSR_LOAD, vm->regions.vm_exit_load_msr_region);
+    VMXWRITE(CTLS_VM_EXIT_MSR_STORE, vm->regions.vm_exit_store_msr_region);
+}
+
 static void
 initialize_vmcs_vm_exit_control(struct vmcs_blob * vm)
 {
@@ -377,6 +414,42 @@ initialize_vmcs_vm_exit_control(struct vmcs_blob * vm)
                                    vm_exit_msr_edx) == ERROR_OK);
     VMXWRITE(CTLS_VM_EXIT, vm_exit_ctls);
     LOG_DEBUG("vmx vm.exit.ctls:0x%x\n", vm_exit_ctls);
+    initialize_vmcs_vm_exit_msr(vm);
+}
+
+
+static void
+initialize_vmcs_vm_entry_msr(struct vmcs_blob * vm)
+{
+    // The MSRs are loaded on vm entry
+    // they are initialized in initialize_vmcs_vm_exit_msr()
+    VMXWRITE(CTLS_VM_ENTRY_MSR_LOAD_COUNT, vm->regions.vm_exit_store_msr_count);
+    VMXWRITE(CTLS_VM_ENTRY_MSR_LOAD, vm->regions.vm_exit_store_msr_region);
+}
+
+static void
+initialize_vmcs_vm_entry_control(struct vmcs_blob * vm)
+{
+    uint32_t vm_entry_msr_eax, vm_entry_msr_edx;
+    RDMSR(IA32_VMX_VM_ENTRY_CTLS_MSR, &vm_entry_msr_eax, &vm_entry_msr_edx);
+    uint32_t vm_entry_ctls = 0;
+    vm_entry_ctls = fix_reserved_1_bits(vm_entry_ctls, vm_entry_msr_eax);
+    vm_entry_ctls = fix_reserved_0_bits(vm_entry_ctls, vm_entry_msr_edx);
+    ASSERT(validate_vmx_capability(vm_entry_ctls, vm_entry_msr_eax,
+                                   vm_entry_msr_edx) == ERROR_OK);
+    LOG_DEBUG("vmx vm.entry.ctls.eax:0x%x\n", vm_entry_msr_eax);
+    LOG_DEBUG("vmx vm.entry.ctls.edx:0x%x\n", vm_entry_msr_edx);
+    LOG_DEBUG("vmx vm.entry.ctls:0x%x\n", vm_entry_ctls);
+    initialize_vmcs_vm_entry_msr(vm);
+    // No event is injected: the 31th bit is invalid
+    VMXWRITE(CTLS_VM_ENTRY_INTERRUPT_INFORMATION_FIELD, 0x0);
+}
+static void
+initialize_vmcs_ept(struct vmcs_blob * vm)
+{
+    // Let's allocate the fixed 16MB to boot the guest, which is supposed to be
+    // enough to accomondate the guest image
+    vm->regions.ept_pml4_base = setup_basic_physical_memory(0, 16*1024*1024);
 }
 
 int 
@@ -398,6 +471,8 @@ initialize_vmcs(struct vmcs_blob * vm)
     initialize_vmcs_guest_state(vm);
     initialize_vmcs_execution_control(vm);
     initialize_vmcs_vm_exit_control(vm);
+    initialize_vmcs_vm_entry_control(vm);
+    initialize_vmcs_ept(vm);
     return ERROR_OK;
 }
 

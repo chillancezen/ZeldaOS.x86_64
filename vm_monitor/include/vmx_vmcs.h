@@ -108,14 +108,24 @@
 #define CTLS_IO_BITMAP_B 0x00002002
 #define CTLS_VM_EXIT 0x0000400C
 #define CTLS_VM_ENTRY 0x00004012
+#define CTLS_VM_EXIT_MSR_STORE 0x00002006
+#define CTLS_VM_EXIT_MSR_STORE_COUNT 0x0000400E
+#define CTLS_VM_EXIT_MSR_LOAD 0x00002006
+#define CTLS_VM_EXIT_MSR_LOAD_COUNT 0x00004010
+#define CTLS_VM_ENTRY_MSR_LOAD 0x0000200A
+#define CTLS_VM_ENTRY_MSR_LOAD_COUNT 0x00004014
+#define CTLS_VM_ENTRY_INTERRUPT_INFORMATION_FIELD 0x00004016
 
 struct vmcs_region {
     uint64_t guest_region;
     uint64_t io_bitmap_region0;
     uint64_t io_bitmap_region1;
     uint64_t virtual_apic_region;
-    uint64_t msr_guest_region;
-    uint64_t msr_host_region;
+    uint64_t vm_exit_store_msr_count;
+    uint64_t vm_exit_load_msr_count;
+    uint64_t vm_exit_store_msr_region; // the MSRs are stored on vm exit and loaded on vm entry
+    uint64_t vm_exit_load_msr_region;  // the MSRs are loaded on vm exit
+    uint64_t ept_pml4_base;
 };
 
 #define HOST_STACK_NR_PAGES 0x8 // 32K is supposed to be enough
