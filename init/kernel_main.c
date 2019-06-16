@@ -75,6 +75,7 @@ init3(void)
     {
         struct vmcs_blob vm;
         pre_initialize_vmcs(&vm);
+        vm.vpid = 1;
         initialize_vmcs(&vm);
     }
 }
@@ -125,7 +126,7 @@ kernel_ap_main(void)
         ASSERT(THIS_CPU(uint32_t, foo) == PER_CPU(uint32_t, foo, cpuid()))
     }
 #endif
-    sti();
+    cli();
     while (1) {
         halt();
     }

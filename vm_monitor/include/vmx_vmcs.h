@@ -110,11 +110,15 @@
 #define CTLS_VM_ENTRY 0x00004012
 #define CTLS_VM_EXIT_MSR_STORE 0x00002006
 #define CTLS_VM_EXIT_MSR_STORE_COUNT 0x0000400E
-#define CTLS_VM_EXIT_MSR_LOAD 0x00002006
+#define CTLS_VM_EXIT_MSR_LOAD 0x00002008
 #define CTLS_VM_EXIT_MSR_LOAD_COUNT 0x00004010
 #define CTLS_VM_ENTRY_MSR_LOAD 0x0000200A
 #define CTLS_VM_ENTRY_MSR_LOAD_COUNT 0x00004014
 #define CTLS_VM_ENTRY_INTERRUPT_INFORMATION_FIELD 0x00004016
+#define CTLS_EPTP 0x0000201A
+#define CTLS_VPID 0x00000000
+#define CTLS_CR3_TARGET_COUNT 0x0000400A
+#define RDONLY_VM_INSTRUCTION_ERROR 0x00004400
 
 struct vmcs_region {
     uint64_t guest_region;
@@ -133,6 +137,7 @@ struct vmcs_region {
 struct vmcs_blob {
     struct vmcs_region regions;
     uint64_t host_stack;
+    uint64_t vpid;
 };
 
 struct vmcs_msr_blob {

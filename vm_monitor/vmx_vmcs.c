@@ -17,6 +17,8 @@
     uint64_t __value = (value);                                                \
     ASSERT(vmx_write((encoding), __value) == ERROR_OK);                        \
     ASSERT(vmx_read((encoding)) == __value);                                   \
+    LOG_TRIVIA("VMX Write: %s:0x%x value:0x%x\n",                              \
+               #encoding, encoding, __value);                                  \
 }
 
 
@@ -86,6 +88,27 @@ vmx_load(uint64_t vmcs_region)
                      :"memory", "cc");
     return (rflag & RFLAG_FLAG_CARRY || rflag & RFLAG_FLAG_ZERO) ?
                -ERROR_INVALID : ERROR_OK;
+}
+
+static void
+vmx_launch(void)
+{
+    uint64_t rflag;
+    __asm__ volatile("vmlaunch;"
+                     "pushfq;"
+                     "popq %[RFLAG];"
+                     :[RFLAG]"=m"(rflag)
+                     :
+                     :"cc");
+    int cf_is_set = !!(rflag & RFLAG_FLAG_CARRY);
+    int zf_is_set = !!(rflag & RFLAG_FLAG_ZERO);
+    LOG_TRIVIA("vmlaunch cf is set:%d\n", cf_is_set);
+    LOG_TRIVIA("vmlaunch zf is set:%d\n", zf_is_set);
+    // According to 30.2, if ZF of RFLAGS is set, it fails with an error number
+    // which is stored in the `VM-Instruction error` field.
+    uint64_t vmx_error = vmx_read(RDONLY_VM_INSTRUCTION_ERROR);
+    LOG_DEBUG("vmx instruction error number:0x%x\n", vmx_error);
+    __not_reach();
 }
 
 static void
@@ -266,7 +289,9 @@ initialize_vmcs_procbased_control(struct vmcs_blob *vm)
     LOG_DEBUG("vmx second procbased.msr.edx:0x%x\n", sec_procbased_msr_edx);
     // Examine basic ept and vpid capability.
     ASSERT(vpid_and_ept_msr_eax & 0x1);
+    //ASSERT(vpid_and_ept_msr_eax & (1 << 8));
     ASSERT(vpid_and_ept_msr_eax & (1 << 14));
+    ASSERT(vpid_and_ept_msr_eax & (1 << 21));
     ASSERT(vpid_and_ept_msr_edx & 0x1);
     {
         // primary process based execution control, See Table 24-6
@@ -311,7 +336,13 @@ initialize_vmcs_procbased_control(struct vmcs_blob *vm)
         // Set the IO bitmap
         VMXWRITE(CTLS_IO_BITMAP_A, vm->regions.io_bitmap_region0);
         VMXWRITE(CTLS_IO_BITMAP_B, vm->regions.io_bitmap_region1);
-        }
+        LOG_TRIVIA("vm:0x%x io.bitmap.region0:0x%x\n",
+                   vm, vm->regions.io_bitmap_region0);
+        LOG_TRIVIA("vm:0x%x io.bitmap.region1:0x%x\n",
+                   vm, vm->regions.io_bitmap_region1);
+        //Set the CR3 target count, no CR3 target causes vm exit.
+        VMXWRITE(CTLS_CR3_TARGET_COUNT, 0x0);
+    }
 }
 
 
@@ -450,6 +481,15 @@ initialize_vmcs_ept(struct vmcs_blob * vm)
     // Let's allocate the fixed 16MB to boot the guest, which is supposed to be
     // enough to accomondate the guest image
     vm->regions.ept_pml4_base = setup_basic_physical_memory(0, 16*1024*1024);
+
+    uint64_t eptp = vm->regions.ept_pml4_base;
+    eptp |= 6;// query the bit 8 of the VPID_EPT VMX CAP
+    eptp |= (4 - 1) << 3; // page-walk length:4
+    eptp |= 1 << 6; // enable acccessed and dirty marking
+    LOG_TRIVIA("vm:0x%x's eptp:0x%x\n", vm, eptp);
+    VMXWRITE(CTLS_EPTP, eptp);
+    ASSERT(vm->vpid);
+    VMXWRITE(CTLS_VPID, vm->vpid);
 }
 
 int 
@@ -473,6 +513,9 @@ initialize_vmcs(struct vmcs_blob * vm)
     initialize_vmcs_vm_exit_control(vm);
     initialize_vmcs_vm_entry_control(vm);
     initialize_vmcs_ept(vm);
+
+    // Launch the vm for the first time
+    vmx_launch();
     return ERROR_OK;
 }
 

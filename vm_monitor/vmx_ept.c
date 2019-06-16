@@ -69,7 +69,10 @@ map_ept_page(uint64_t base, uint64_t guest_pa, uint64_t phy_pa)
     _pt->write_access = 1;
     _pt->instruction_fetchable = 1;
     _pt->usermode_instruction_fetchable = 1;
-    // FIXME: fill other fields of the last entry
+    // FIXED: fill other fields of the last entry
+    // See 28.2.6.2
+    _pt->ignore_pat_memory_type = 1;
+    _pt->ept_memory_type = 6;
     _pt->ept_4k_page = phy_pa >> PAGE_SHIFT_4K;
     return ERROR_OK;
 }
