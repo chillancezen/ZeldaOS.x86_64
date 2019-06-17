@@ -29,6 +29,7 @@ pre_initialize_vmcs(struct vmcs_blob * vm)
 {
 #define _(_va) {                                                               \
     ASSERT(_va);                                                               \
+    memset((void *)_va, 0x0, PAGE_SIZE_4K);                                    \
     ASSERT(_va == pa(_va));                                                    \
 }
 
@@ -111,12 +112,31 @@ vmx_launch(void)
     __not_reach();
 }
 
+__attribute__((unused)) static int
+vmx_clear(uint64_t vmcs_region)
+{
+    uint64_t rflag;
+    __asm__ volatile("vmclear %[REGION];"
+                     :[RFLAG]"=m"(rflag)
+                     :[REGION]"m"(vmcs_region)
+                     :"cc", "memory");
+    return (rflag & RFLAG_FLAG_CARRY || rflag & RFLAG_FLAG_ZERO) ?
+               -ERROR_INVALID : ERROR_OK;
+}
+
 static void
 initialize_vmcs_host_state(struct vmcs_blob *vm)
 {
-    VMXWRITE(HOST_CR0, get_cr0());
+    uint32_t eax, edx;
+    {
+        RDMSR(IA32_VMX_CR0_FIXED0_MSR, &eax, &edx);
+        VMXWRITE(HOST_CR0, eax | get_cr0());
+    }
     VMXWRITE(HOST_CR3, get_cr3());
-    VMXWRITE(HOST_CR4, get_cr4());
+    {
+        RDMSR(IA32_VMX_CR4_FIXED0_MSR, &eax, &edx);
+        VMXWRITE(HOST_CR4, eax | get_cr4());
+    }
     VMXWRITE(HOST_ES_SELECTOR, KERNEL_DATA_SELECTOR);
     VMXWRITE(HOST_CS_SELECTOR, KERNEL_CODE_SELECTOR);
     VMXWRITE(HOST_SS_SELECTOR, KERNEL_DATA_SELECTOR);
@@ -137,7 +157,7 @@ initialize_vmcs_host_state(struct vmcs_blob *vm)
     VMXWRITE(HOST_GS_BASE, get_gs_base());
     VMXWRITE(HOST_TR_BASE, (uint64_t)get_tss_base());
     VMXWRITE(HOST_RSP, vm->host_stack);
-    VMXWRITE(HOST_RSP, (uint64_t)&vm_exit_handler);
+    VMXWRITE(HOST_RIP, (uint64_t)&vm_exit_handler);
 }
 
 static void
@@ -264,7 +284,6 @@ initialize_vmcs_pinbased_control(struct vmcs_blob *vm)
     ASSERT(validate_vmx_capability(pinbased_vm_execution_ctrl,
                                    pinbased_msr_eax, pinbased_msr_edx) ==
            ERROR_OK);
-    LOG_DEBUG("vmx pinbased.msr.dword:0x%x\n", pinbased_vm_execution_ctrl);
     VMXWRITE(CTLS_PIN_BASED_VM_EXECUTION, pinbased_vm_execution_ctrl);
 }
 
@@ -310,7 +329,6 @@ initialize_vmcs_procbased_control(struct vmcs_blob *vm)
         ASSERT(validate_vmx_capability(pri_procbase_ctls, pri_procbased_msr_eax,
                                        pri_procbased_msr_edx) == ERROR_OK);
         VMXWRITE(CTLS_PRI_PROC_BASED_VM_EXECUTION, pri_procbase_ctls);
-        LOG_DEBUG("vmx pri.procbased.msr.dword:0x%x\n", pri_procbase_ctls);
     }
     {
         // second process based execution control, see Table 24-7
@@ -326,7 +344,6 @@ initialize_vmcs_procbased_control(struct vmcs_blob *vm)
         ASSERT(validate_vmx_capability(sec_procbase_ctls, sec_procbased_msr_eax,
                                        sec_procbased_msr_edx) == ERROR_OK);
         VMXWRITE(CTLS_SEC_PROC_BASED_VM_EXECUTION, sec_procbase_ctls);
-        LOG_DEBUG("vmx sec.procbased.msr.dword:0x%x\n", sec_procbase_ctls);
     }
     {
         // Exception bitmap, see 6.15 for all the exception reference.
@@ -336,10 +353,6 @@ initialize_vmcs_procbased_control(struct vmcs_blob *vm)
         // Set the IO bitmap
         VMXWRITE(CTLS_IO_BITMAP_A, vm->regions.io_bitmap_region0);
         VMXWRITE(CTLS_IO_BITMAP_B, vm->regions.io_bitmap_region1);
-        LOG_TRIVIA("vm:0x%x io.bitmap.region0:0x%x\n",
-                   vm, vm->regions.io_bitmap_region0);
-        LOG_TRIVIA("vm:0x%x io.bitmap.region1:0x%x\n",
-                   vm, vm->regions.io_bitmap_region1);
         //Set the CR3 target count, no CR3 target causes vm exit.
         VMXWRITE(CTLS_CR3_TARGET_COUNT, 0x0);
     }
@@ -444,7 +457,6 @@ initialize_vmcs_vm_exit_control(struct vmcs_blob * vm)
     ASSERT(validate_vmx_capability(vm_exit_ctls, vm_exit_msr_eax,
                                    vm_exit_msr_edx) == ERROR_OK);
     VMXWRITE(CTLS_VM_EXIT, vm_exit_ctls);
-    LOG_DEBUG("vmx vm.exit.ctls:0x%x\n", vm_exit_ctls);
     initialize_vmcs_vm_exit_msr(vm);
 }
 
@@ -470,7 +482,7 @@ initialize_vmcs_vm_entry_control(struct vmcs_blob * vm)
                                    vm_entry_msr_edx) == ERROR_OK);
     LOG_DEBUG("vmx vm.entry.ctls.eax:0x%x\n", vm_entry_msr_eax);
     LOG_DEBUG("vmx vm.entry.ctls.edx:0x%x\n", vm_entry_msr_edx);
-    LOG_DEBUG("vmx vm.entry.ctls:0x%x\n", vm_entry_ctls);
+    VMXWRITE(CTLS_VM_ENTRY, vm_entry_ctls);
     initialize_vmcs_vm_entry_msr(vm);
     // No event is injected: the 31th bit is invalid
     VMXWRITE(CTLS_VM_ENTRY_INTERRUPT_INFORMATION_FIELD, 0x0);
@@ -486,27 +498,29 @@ initialize_vmcs_ept(struct vmcs_blob * vm)
     eptp |= 6;// query the bit 8 of the VPID_EPT VMX CAP
     eptp |= (4 - 1) << 3; // page-walk length:4
     eptp |= 1 << 6; // enable acccessed and dirty marking
-    LOG_TRIVIA("vm:0x%x's eptp:0x%x\n", vm, eptp);
     VMXWRITE(CTLS_EPTP, eptp);
     ASSERT(vm->vpid);
     VMXWRITE(CTLS_VPID, vm->vpid);
 }
 
+static void
+initialize_vmcs_ealy_state(struct vmcs_blob * vm)
+{
+    uint32_t eax;
+    uint32_t edx;
+    RDMSR(IA32_VMX_BASIC_MSR, &eax, &edx);
+    // If memory type of access to vmcs is not write-back, PANIC
+    ASSERT(((edx >> (50 - 32)) & 0xf) == 0x6);
+}
 int 
 initialize_vmcs(struct vmcs_blob * vm)
 {
     // load the vmcs, make the vmcs active and current, but not launched.
     uint32_t * dword_ptr = (uint32_t *)vm->regions.guest_region;
     dword_ptr[0] = get_vmx_revision_id();
-    int rc = vmx_load(vm->regions.guest_region);
-    LOG_INFO("vmx load vmcs:0x%x %s\n",
-             vm->regions.guest_region,
-             rc == ERROR_OK ? "successful" : "unsuccessful");
-    if (rc != ERROR_OK) {
-        return -ERROR_INVALID;
-    }
-
-    // Initialize host-state fields
+    //ASSERT(ERROR_OK == vmx_clear(vm->regions.guest_region));
+    ASSERT(ERROR_OK == vmx_load(vm->regions.guest_region));
+    initialize_vmcs_ealy_state(vm);
     initialize_vmcs_host_state(vm);
     initialize_vmcs_guest_state(vm);
     initialize_vmcs_execution_control(vm);

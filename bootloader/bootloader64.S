@@ -74,10 +74,12 @@ bootloader_main:
     // 0x100000.
     movl $BOOTMAIN_SIZE, %ecx
     shrl $0x9, %ecx
-    movl $BOOTMAIN_SIZE, %edx
-    andl $0x1ff, %edx
-    cmpl $0x0, %edx
-    je ready_to_load
+    // comment some instructions to spare little room
+    // always load one more sector
+    //movl $BOOTMAIN_SIZE, %edx
+    //andl $0x1ff, %edx
+    //cmpl $0x0, %edx
+    //je ready_to_load
     incl %ecx
     ready_to_load:
     mov $__kernel_loading_sector_nr, %di
