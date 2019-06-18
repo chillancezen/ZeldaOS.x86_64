@@ -23,6 +23,9 @@
 
 
 extern void * vm_exit_handler;
+extern void * _guest64_start;
+extern void * _guest64_end;
+
 
 int
 pre_initialize_vmcs(struct vmcs_blob * vm)
@@ -512,6 +515,16 @@ initialize_vmcs_ealy_state(struct vmcs_blob * vm)
     // If memory type of access to vmcs is not write-back, PANIC
     ASSERT(((edx >> (50 - 32)) & 0xf) == 0x6);
 }
+
+static void
+initialize_vmcs_guest_image(struct vmcs_blob * vm)
+{
+    uint64_t guest_image_start_addr = (uint64_t)(&_guest64_start);
+    uint64_t guest_image_end_addr = (uint64_t)(&_guest64_end);
+    LOG_DEBUG("vm:0x%x's image start:0x%x\n",vm, guest_image_start_addr);
+    LOG_DEBUG("vm:0x%x's image end:0x%x\n",vm,  guest_image_end_addr);
+}
+
 int 
 initialize_vmcs(struct vmcs_blob * vm)
 {
@@ -527,7 +540,7 @@ initialize_vmcs(struct vmcs_blob * vm)
     initialize_vmcs_vm_exit_control(vm);
     initialize_vmcs_vm_entry_control(vm);
     initialize_vmcs_ept(vm);
-
+    initialize_vmcs_guest_image(vm);
     // Launch the vm for the first time
     vmx_launch();
     return ERROR_OK;

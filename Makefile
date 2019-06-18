@@ -5,12 +5,20 @@ IMAGE = Zelda64.img
 include mk/kernel64.mk
 include mk/bootloader64.mk
 
+.PHONY: GUEST_CLEAN
+GUEST_CLEAN:
+	@make clean --no-print-directory -C guest
+
 .PHONY:clean
-clean: KERNEL_CLEAN BOOTLOADER_CLEAN
+clean: KERNEL_CLEAN BOOTLOADER_CLEAN GUEST_CLEAN
 	@rm -f $(IMAGE)
 
+.PHONY: GUEST_IMAGE
+GUEST_IMAGE:
+	@make --no-print-directory -C guest
+
 .PHONY:image
-image: KERNEL_IMAGE BOOTLOADER_IMAGE
+image: GUEST_IMAGE KERNEL_IMAGE BOOTLOADER_IMAGE
 	@echo "[IMAGE] $(IMAGE)"
 	@dd conv=notrunc if=$(BL_BIN) of=$(IMAGE) status=none
 	@dd conv=notrunc obs=512 if=$(BIN) of=$(IMAGE) seek=1 status=none
