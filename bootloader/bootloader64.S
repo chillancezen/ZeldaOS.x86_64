@@ -34,6 +34,10 @@ __kernel_loading_sector_base: .long 0x0
 .org 0x0d
 bootloader_main:
     cli
+    
+    //Bochs will start %esi register with 0x000e0000 (BIOS address) value, we have to clear this.
+    xor %esi, %esi
+    
     // This is to setup the initial stack, actually, the memory which is lower
     // than 1MB ranging 00001000-0009ebff is free to use, and we choose one
     // segment to load the kernel, the kernel may choose whatever it likes to
