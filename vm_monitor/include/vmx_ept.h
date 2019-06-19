@@ -67,4 +67,7 @@ struct ept_pte {
 uint64_t
 setup_basic_physical_memory(uint64_t addr_low, uint64_t addr_high);
 
+uint64_t
+guestpa_to_hostpa(uint64_t ept_base, uint64_t guestpa);
+
 #endif

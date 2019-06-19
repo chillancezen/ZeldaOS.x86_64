@@ -6,6 +6,14 @@
 
 
 void
+memcpy(void * dst, const void * src, int length)
+{
+    int idx = 0;
+    for (idx = 0; idx < length; idx++) {
+        *(idx + (char *)dst) = *(idx + (char *)src);
+    }
+}
+void
 memset(void * dst, uint8_t val, uint64_t size)
 {
     uint64_t idx = 0;

@@ -17,7 +17,6 @@
 #define HOST_GS_SELECTOR 0x00000C0A
 #define HOST_TR_SELECTOR 0x00000C0C
 #define HOST_IA32_PAT_FULL 0x00002C00
-#define HOST_IA32_PAT_HIGH 0x00002C00
 #define HOST_IA32_EFER_FULL 0x00002C02
 #define HOST_IA32_EFER_HIGH 0x00002C03
 #define HOST_IA32_PERF_GLOBAL_CTRL_FULL 0x00002C04
@@ -35,7 +34,7 @@
 #define HOST_IA32_SYSENTER_EIP 0x00006C12
 #define HOST_RSP 0x00006C14
 #define HOST_RIP 0x00006C16
-
+#define HOST_IA32_EFER 0x00002C02
 // Appendix B.1.2
 #define GUEST_ES_SELECTOR 0x00000800
 #define GUEST_CS_SELECTOR 0x00000802
@@ -69,6 +68,7 @@
 #define GUEST_PENDING_DEBUG_EXCEPTION 0x00006822
 #define GUEST_IA32_SYSENTER_ESP 0x00006824
 #define GUEST_IA32_SYSENTER_EIP 0x00006826
+#define GUEST_IA32_EFER 0x00002806
 
 // Appendix B.3.3
 #define GUEST_ES_LIMIT 0x00004800
@@ -120,6 +120,8 @@
 #define CTLS_CR3_TARGET_COUNT 0x0000400A
 #define RDONLY_VM_INSTRUCTION_ERROR 0x00004400
 
+
+#define VMEXIT_REASON 0x00004402
 struct vmcs_region {
     uint64_t guest_region;
     uint64_t io_bitmap_region0;
@@ -154,4 +156,15 @@ pre_initialize_vmcs(struct vmcs_blob * vm);
 int
 initialize_vmcs(struct vmcs_blob * vm);
 
+struct vmcs_blob *
+get_current_vm(void);
+
+void
+set_current_vm(struct vmcs_blob * vm);
+
+uint64_t
+vmx_read(uint64_t encoding);
+
+int
+vmx_write(uint64_t encoding, uint64_t value);
 #endif

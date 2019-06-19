@@ -7,6 +7,42 @@
 #include <memory/include/paging.h>
 #include <lib64/include/string.h>
 
+uint64_t
+guestpa_to_hostpa(uint64_t ept_base, uint64_t guestpa)
+{
+    uint64_t hostpa = -1;
+    int l4_index = LEVEL_4_INDEX(guestpa);
+    int l3_index = LEVEL_3_INDEX(guestpa);
+    int l2_index = LEVEL_2_INDEX(guestpa);
+    int l1_index = LEVEL_1_INDEX(guestpa);
+    struct ept_pml4e * _pml4e = l4_index + (struct ept_pml4e *)ept_base;
+    if (!_pml4e->read_access && !_pml4e->write_access) {
+        goto out;
+    }
+
+    struct ept_pdpe * _pdpe =
+        l3_index + (struct ept_pdpe *)(uint64_t)(_pml4e->ept_pdpt << PAGE_SHIFT_4K);
+    if (!_pdpe->read_access && !_pdpe->write_access) {
+        goto out;
+    }
+
+    struct ept_pde * _pde =
+        l2_index + (struct ept_pde *)(uint64_t)(_pdpe->ept_pdt << PAGE_SHIFT_4K);
+    if (!_pde->read_access && !_pde->write_access) {
+        goto out;
+    }
+
+    struct ept_pte * _pt =
+        l1_index + (struct ept_pte *)(uint64_t)(_pde->ept_pt << PAGE_SHIFT_4K);
+    if (!_pt->read_access && _pt->write_access) {
+        goto out;
+    }
+    hostpa = _pt->ept_4k_page << PAGE_SHIFT_4K;
+    hostpa |= guestpa & PAGE_MASK_4K;
+
+    out:
+        return hostpa;
+}
 static int
 map_ept_page(uint64_t base, uint64_t guest_pa, uint64_t phy_pa)
 {

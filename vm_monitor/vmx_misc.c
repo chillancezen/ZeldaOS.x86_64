@@ -94,15 +94,11 @@ vm_monitor_init(void)
         uint32_t cr0_fixed1;
         uint32_t cr4_fixed0;
         uint32_t cr4_fixed1;
-        uint32_t ecx, edx;
-        ecx = IA32_VMX_CR0_FIXED0_MSR;
-        RDMSR(ecx, &cr0_fixed0, &edx);
-        ecx = IA32_VMX_CR0_FIXED1_MSR;
-        RDMSR(ecx, &cr0_fixed1, &edx);
-        ecx = IA32_VMX_CR4_FIXED0_MSR;
-        RDMSR(ecx, &cr4_fixed0, &edx);
-        ecx = IA32_VMX_CR4_FIXED1_MSR;
-        RDMSR(ecx, &cr4_fixed1, &edx);
+        uint32_t edx;
+        RDMSR(IA32_VMX_CR0_FIXED0_MSR, &cr0_fixed0, &edx);
+        RDMSR(IA32_VMX_CR0_FIXED1_MSR, &cr0_fixed1, &edx);
+        RDMSR(IA32_VMX_CR4_FIXED0_MSR, &cr4_fixed0, &edx);
+        RDMSR(IA32_VMX_CR4_FIXED1_MSR, &cr4_fixed1, &edx);
         LOG_INFO("CR0 vmx fixed bits:(0x%x, 0x%x)\n", cr0_fixed0, cr0_fixed1);
         LOG_INFO("CR4 vmx fixed bits:(0x%x, 0x%x)\n", cr4_fixed0, cr4_fixed1);
     }

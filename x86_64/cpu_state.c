@@ -40,6 +40,14 @@ get_fs_base(void)
 }
 
 uint64_t
+get_efer(void)
+{
+    uint32_t eax, edx;
+    RDMSR(IA32_EFER_MSR, &eax, &edx);
+    return eax | (((uint64_t)edx) << 32);
+}
+
+uint64_t
 get_gs_base(void)
 {
     uint32_t eax, edx;

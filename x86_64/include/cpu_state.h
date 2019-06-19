@@ -103,4 +103,7 @@ get_fs_base(void);
 
 uint64_t
 get_gs_base(void);
+
+uint64_t
+get_efer(void);
 #endif

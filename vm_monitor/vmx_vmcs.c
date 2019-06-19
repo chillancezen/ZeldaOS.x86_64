@@ -12,6 +12,7 @@
 #include <x86_64/include/lapic.h>
 #include <x86_64/include/tss.h>
 #include <x86_64/include/msr.h>
+#include <x86_64/include/per_cpu.h>
 
 #define VMXWRITE(encoding, value) {                                            \
     uint64_t __value = (value);                                                \
@@ -25,7 +26,7 @@
 extern void * vm_exit_handler;
 extern void * _guest64_start;
 extern void * _guest64_end;
-
+static DECLARE_PER_CPU_VARIABLE(struct vmcs_blob *, current_vm);
 
 int
 pre_initialize_vmcs(struct vmcs_blob * vm)
@@ -54,7 +55,7 @@ pre_initialize_vmcs(struct vmcs_blob * vm)
 }
 
 
-static int
+int
 vmx_write(uint64_t encoding, uint64_t value)
 {
     uint64_t rflag = 0;
@@ -68,8 +69,7 @@ vmx_write(uint64_t encoding, uint64_t value)
                -ERROR_INVALID : ERROR_OK;
 }
 
-__attribute__((unused))
-static uint64_t
+uint64_t
 vmx_read(uint64_t encoding)
 {
     uint64_t value = 0;
@@ -161,13 +161,15 @@ initialize_vmcs_host_state(struct vmcs_blob *vm)
     VMXWRITE(HOST_TR_BASE, (uint64_t)get_tss_base());
     VMXWRITE(HOST_RSP, vm->host_stack);
     VMXWRITE(HOST_RIP, (uint64_t)&vm_exit_handler);
+    VMXWRITE(HOST_IA32_EFER, get_efer());
 }
 
 static void
 initialize_vmcs_guest_state(struct vmcs_blob *vm)
 {
+    uint64_t eax, edx;
     VMXWRITE(GUEST_ES_SELECTOR, 0x0);
-    VMXWRITE(GUEST_CS_SELECTOR, 0x0);
+    VMXWRITE(GUEST_CS_SELECTOR, 0x100);
     VMXWRITE(GUEST_DS_SELECTOR, 0x0);
     VMXWRITE(GUEST_FS_SELECTOR, 0x0);
     VMXWRITE(GUEST_GS_SELECTOR, 0x0);
@@ -196,10 +198,11 @@ initialize_vmcs_guest_state(struct vmcs_blob *vm)
     VMXWRITE(GUEST_IDTR_LIMIT, 0xffff);
     // see Figure 3-8. Segment Descriptor for the access right
     // and see table 24-2 for the format of the access right.
+    // FIXED: the access right do impact my vm entry.
     #define DATA_ACCESS_RIGHT (0x3 | 1 << 4 | 1 << 7)
-    #define CODE_ACCESS_RIGHT (0xa | 1 << 4 | 1 << 7 | 1 << 13)
+    #define CODE_ACCESS_RIGHT (0x3 | 1 << 4 | 1 << 7 | 1 << 13)
     #define LDTR_ACCESS_RIGHT (0x2 | 1 << 7)
-    #define TR_ACCESS_RIGHT (0xb | 1 << 7)
+    #define TR_ACCESS_RIGHT (0x3 | 1 << 7)
     VMXWRITE(GUEST_CS_ACCESS_RIGHT, CODE_ACCESS_RIGHT);
     VMXWRITE(GUEST_DS_ACCESS_RIGHT, DATA_ACCESS_RIGHT);
     VMXWRITE(GUEST_ES_ACCESS_RIGHT, DATA_ACCESS_RIGHT);
@@ -210,16 +213,26 @@ initialize_vmcs_guest_state(struct vmcs_blob *vm)
     VMXWRITE(GUEST_TR_ACCESS_RIGHT, TR_ACCESS_RIGHT);
     VMXWRITE(GUEST_INTERRUPTIBILITY_STATE, 0x0);
     VMXWRITE(GUEST_ACTIVITY_STATE, 0x0);
-    VMXWRITE(GUEST_CR0, CR0_NE);
+    {
+        RDMSR(IA32_VMX_CR0_FIXED0_MSR, &eax, &edx);
+        eax &= ~(1 << 0); // disable PE
+        eax &= ~(1 << 31); // disable PG
+        VMXWRITE(GUEST_CR0, eax | ((uint64_t)edx) << 32);
+    }
     VMXWRITE(GUEST_CR3, 0x0);
-    VMXWRITE(GUEST_CR4, 0x0);
+    {
+        RDMSR(IA32_VMX_CR4_FIXED0_MSR, &eax, &edx);
+        VMXWRITE(GUEST_CR4, eax | ((uint64_t)edx) << 32);
+    }
     VMXWRITE(GUEST_DR7, 0x0);
     VMXWRITE(GUEST_RSP, 0x0);
-    VMXWRITE(GUEST_RIP, 0x0);
+    VMXWRITE(GUEST_RIP, 0x0); // guest cs:ip -> 0x100:0
     #define RFLAG_RESERVED (1 << 1)
     VMXWRITE(GUEST_RFLAG, RFLAG_RESERVED);
     VMXWRITE(GUEST_VMCS_LINK_POINTER_LOW, 0xffffffff);
     VMXWRITE(GUEST_VMCS_LINK_POINTER_HIGH, 0xffffffff);
+
+    VMXWRITE(GUEST_IA32_EFER, 0x0);
 }
 
 static int
@@ -419,7 +432,7 @@ initialize_vmcs_vm_exit_msr(struct vmcs_blob * vm)
 {
     memset((void *)vm->regions.vm_exit_store_msr_region, 0x0, PAGE_SIZE_4K);
     memset((void *)vm->regions.vm_exit_load_msr_region, 0x0, PAGE_SIZE_4K);
-    uint32_t predefined_msrs[] = {IA32_EFER_MSR};
+    uint32_t predefined_msrs[0];// = {IA32_EFER_MSR};
     int nr_msrs = sizeof(predefined_msrs) / sizeof(uint32_t);
     vm->regions.vm_exit_load_msr_count = nr_msrs;
     vm->regions.vm_exit_store_msr_count = nr_msrs;
@@ -455,6 +468,7 @@ initialize_vmcs_vm_exit_control(struct vmcs_blob * vm)
     uint32_t vm_exit_ctls = 0;
     vm_exit_ctls |= 1 << 9; // VM exit to 64-bit long mode.
     vm_exit_ctls |= 1 << 15; // ACK external interrupts.
+    vm_exit_ctls |= 1 << 21; // Load IA32_EFER on vm-exit
     vm_exit_ctls = fix_reserved_1_bits(vm_exit_ctls, vm_exit_msr_eax);
     vm_exit_ctls = fix_reserved_0_bits(vm_exit_ctls, vm_exit_msr_edx);
     ASSERT(validate_vmx_capability(vm_exit_ctls, vm_exit_msr_eax,
@@ -479,6 +493,7 @@ initialize_vmcs_vm_entry_control(struct vmcs_blob * vm)
     uint32_t vm_entry_msr_eax, vm_entry_msr_edx;
     RDMSR(IA32_VMX_VM_ENTRY_CTLS_MSR, &vm_entry_msr_eax, &vm_entry_msr_edx);
     uint32_t vm_entry_ctls = 0;
+    vm_entry_ctls |= 1 << 15; // load EFER msr on vm-entry
     vm_entry_ctls = fix_reserved_1_bits(vm_entry_ctls, vm_entry_msr_eax);
     vm_entry_ctls = fix_reserved_0_bits(vm_entry_ctls, vm_entry_msr_edx);
     ASSERT(validate_vmx_capability(vm_entry_ctls, vm_entry_msr_eax,
@@ -523,6 +538,30 @@ initialize_vmcs_guest_image(struct vmcs_blob * vm)
     uint64_t guest_image_end_addr = (uint64_t)(&_guest64_end);
     LOG_DEBUG("vm:0x%x's image start:0x%x\n",vm, guest_image_start_addr);
     LOG_DEBUG("vm:0x%x's image end:0x%x\n",vm,  guest_image_end_addr);
+
+    // copy the guest image into guest memory which begins at its second page
+    uint64_t img_addr = guest_image_start_addr;
+    uint64_t guest_addr = PAGE_SIZE_4K;
+    uint64_t host_pa;
+    for (; img_addr < guest_image_end_addr; img_addr += PAGE_SIZE_4K) {
+        host_pa = guestpa_to_hostpa(vm->regions.ept_pml4_base, guest_addr);
+        ASSERT(pa(host_pa) == host_pa);
+        memcpy((void *)host_pa, (void *)img_addr, PAGE_SIZE_4K);
+    }
+}
+
+struct vmcs_blob *
+get_current_vm(void)
+{
+    struct vmcs_blob ** pvm = THIS_CPU(struct vmcs_blob *, current_vm);
+    return *pvm;
+}
+
+void
+set_current_vm(struct vmcs_blob * vm)
+{
+    struct vmcs_blob ** pvm = THIS_CPU(struct vmcs_blob *, current_vm);
+    *pvm = vm;
 }
 
 int 
@@ -542,6 +581,7 @@ initialize_vmcs(struct vmcs_blob * vm)
     initialize_vmcs_ept(vm);
     initialize_vmcs_guest_image(vm);
     // Launch the vm for the first time
+    set_current_vm(vm);
     vmx_launch();
     return ERROR_OK;
 }
