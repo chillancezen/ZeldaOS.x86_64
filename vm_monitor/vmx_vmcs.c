@@ -292,7 +292,7 @@ initialize_vmcs_pinbased_control(struct vmcs_blob *vm)
     LOG_DEBUG("vmx pinbased.msr.edx:0x%x\n", pinbased_msr_edx);
     uint32_t pinbased_vm_execution_ctrl = 0;
     // External Interrupt causes a VM EXIT
-    pinbased_vm_execution_ctrl |= 1;
+    //pinbased_vm_execution_ctrl |= 1;
     pinbased_vm_execution_ctrl = fix_reserved_1_bits(pinbased_vm_execution_ctrl,
                                                      pinbased_msr_eax);
     pinbased_vm_execution_ctrl = fix_reserved_0_bits(pinbased_vm_execution_ctrl,
@@ -335,7 +335,8 @@ initialize_vmcs_procbased_control(struct vmcs_blob *vm)
         pri_procbase_ctls |= 1 << 9; // INVLPG causes vm exit
         pri_procbase_ctls |= 1 << 15; // CR3-load causes vm exit
         pri_procbase_ctls |= 1 << 16; // CR3-store causes vm exit
-        pri_procbase_ctls |= 1 << 25; // Use IO bitmap
+        pri_procbase_ctls |= 1 << 24; // Unconditional IO exiting
+        //pri_procbase_ctls |= 1 << 25; // Use IO bitmap
         pri_procbase_ctls |= 1 << 30; // PAUSE causes vm exit
         pri_procbase_ctls |= 1 << 31; // activate secondary controls
         pri_procbase_ctls = fix_reserved_1_bits(pri_procbase_ctls,
@@ -564,6 +565,56 @@ set_current_vm(struct vmcs_blob * vm)
     *pvm = vm;
 }
 
+void
+dump_vm(struct vmcs_blob * vm)
+{
+    // XXX: the vm must be current vm, and vmcs is marked as 'current'
+    struct guest_cpu_state * vcpu = vm->vcpu;
+    ASSERT(get_current_vm() == vm);
+        LOG_DEBUG("dump vm:0x%x(vpid:%d)\n", vm, vm->vpid);
+    LOG_DEBUG("   RAX:0x%x RBX:0x%x RCX:0x%x RDX:0x%d\n",
+              vcpu->rax, vcpu->rbx, vcpu->rcx, vcpu->rdx);
+    LOG_DEBUG("   R15:0x%x R14:0x%x R13:0x%x, R12:0x%x\n",
+              vcpu->r15, vcpu->r14, vcpu->r13, vcpu->r12);
+    LOG_DEBUG("   R11:0x%x R10:0x%x R9:0x%x R8:0x%x\n",
+              vcpu->r11, vcpu->r10, vcpu->r9, vcpu->r8);
+    LOG_DEBUG("   RSI:0x%x RDI:0x%x RBP:0x%x RSP:0x%x\n",
+              vcpu->rsi, vcpu->rdi, vcpu->rbp, vmx_read(GUEST_RSP));
+    LOG_DEBUG("   CR0:0x%x CR2:0x%x CR3:0x%x CR4:0x%x\n",
+              vmx_read(GUEST_CR0), vcpu->cr2, vmx_read(GUEST_CR3),
+              vmx_read(GUEST_CR4));
+    LOG_DEBUG("   RIP:0x%x RFLAGS:0x%x EFER:0x%x\n",
+              vmx_read(GUEST_RIP), vmx_read(GUEST_RFLAG),
+              vmx_read(GUEST_IA32_EFER));
+    LOG_DEBUG("   CS  SELECTOR:0x%x BASE:0x%x, LIMIT:0x%x, ACCESS-RIGHT:0x%x\n",
+              vmx_read(GUEST_CS_SELECTOR), vmx_read(GUEST_CS_BASE),
+              vmx_read(GUEST_CS_LIMIT), vmx_read(GUEST_CS_ACCESS_RIGHT));
+    LOG_DEBUG("   DS  SELECTOR:0x%x BASE:0x%x, LIMIT:0x%x, ACCESS-RIGHT:0x%x\n",
+              vmx_read(GUEST_DS_SELECTOR), vmx_read(GUEST_DS_BASE),
+              vmx_read(GUEST_DS_LIMIT), vmx_read(GUEST_DS_ACCESS_RIGHT));
+    LOG_DEBUG("   ES  SELECTOR:0x%x BASE:0x%x, LIMIT:0x%x, ACCESS-RIGHT:0x%x\n",
+              vmx_read(GUEST_ES_SELECTOR), vmx_read(GUEST_ES_BASE),
+              vmx_read(GUEST_ES_LIMIT), vmx_read(GUEST_ES_ACCESS_RIGHT));
+    LOG_DEBUG("   FS  SELECTOR:0x%x BASE:0x%x, LIMIT:0x%x, ACCESS-RIGHT:0x%x\n",
+              vmx_read(GUEST_FS_SELECTOR), vmx_read(GUEST_FS_BASE),
+              vmx_read(GUEST_FS_LIMIT), vmx_read(GUEST_FS_ACCESS_RIGHT));
+    LOG_DEBUG("   GS  SELECTOR:0x%x BASE:0x%x, LIMIT:0x%x, ACCESS-RIGHT:0x%x\n",
+              vmx_read(GUEST_GS_SELECTOR), vmx_read(GUEST_GS_BASE),
+              vmx_read(GUEST_GS_LIMIT), vmx_read(GUEST_GS_ACCESS_RIGHT));
+    LOG_DEBUG("   SS  SELECTOR:0x%x BASE:0x%x, LIMIT:0x%x, ACCESS-RIGHT:0x%x\n",
+              vmx_read(GUEST_SS_SELECTOR), vmx_read(GUEST_SS_BASE),
+              vmx_read(GUEST_SS_LIMIT), vmx_read(GUEST_SS_ACCESS_RIGHT));
+    LOG_DEBUG("   LDTR SELECTOR:0x%x BASE:0x%x, LIMIT:0x%x, ACCESS-RIGHT:0x%x\n"
+              , vmx_read(GUEST_LDTR_SELECTOR), vmx_read(GUEST_LDTR_BASE),
+              vmx_read(GUEST_LDTR_LIMIT), vmx_read(GUEST_LDTR_ACCESS_RIGHT));
+    LOG_DEBUG("   GDTR SELECTOR:NA BASE:0x%x, LIMIT:0x%x, ACCESS-RIGHT:NA\n",
+              vmx_read(GUEST_GDTR_BASE), vmx_read(GUEST_GDTR_LIMIT));
+    LOG_DEBUG("   TR SELECTOR:0x%x BASE:0x%x, LIMIT:0x%x, ACCESS-RIGHT:0x%x\n",
+              vmx_read(GUEST_TR_SELECTOR), vmx_read(GUEST_TR_BASE),
+              vmx_read(GUEST_TR_LIMIT), vmx_read(GUEST_TR_ACCESS_RIGHT));
+    LOG_DEBUG("   IDTR SELECTOR:NA base:0x%x, LIMIT:0x%x, ACCESS-RIGHT:NA\n",
+              vmx_read(GUEST_IDTR_BASE), vmx_read(GUEST_IDTR_LIMIT)); 
+}
 int 
 initialize_vmcs(struct vmcs_blob * vm)
 {

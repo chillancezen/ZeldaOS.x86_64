@@ -13,8 +13,11 @@ guest_entry:
     ljmp $0x100, $0x10
 
 .org 0x10
+    movw $1, %dx
+    inb %dx, %al
 1:
     cli
+    movw $0x1235, %ax
     hlt
     jmp 1b
 

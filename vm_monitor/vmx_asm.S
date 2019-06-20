@@ -5,7 +5,6 @@
 .extern vm_exit_handler_entry
 
 vm_exit_handler:
-
     // Save non-vmcs processor states
     pushq %rax
     pushq %rbx

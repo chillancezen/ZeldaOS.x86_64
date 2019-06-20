@@ -5,7 +5,7 @@
 #ifndef _VMX_VMCS_H
 #define _VMX_VMCS_H
 #include <lib64/include/type.h>
-
+#include <vm_monitor/include/vmx_vcpu_state.h>
 // VMCS HOST STATE FIELDS: see Intel SDM Volume 3, Appendix B.1.3,
 // Appendix B.2.4, Appendix B.3.4 and Appendix 4.4.4
 
@@ -122,6 +122,12 @@
 
 
 #define VMEXIT_REASON 0x00004402
+#define VMEXIT_QUALIFICATION 0x00006400
+#define VMEXIT_GUEST_LINEAR_ADDR 0x0000640A
+#define VMEXIT_GUEST_PHYSICAL_ADDR 0x00002400
+#define VMEXIT_INSTRUCTION_LENGTH 0x0000440C
+#define VMEXIT_INSTRUCTION_INFO 0x0000440E
+
 struct vmcs_region {
     uint64_t guest_region;
     uint64_t io_bitmap_region0;
@@ -140,6 +146,7 @@ struct vmcs_blob {
     struct vmcs_region regions;
     uint64_t host_stack;
     uint64_t vpid;
+    struct guest_cpu_state * vcpu;
 };
 
 struct vmcs_msr_blob {
@@ -167,4 +174,8 @@ vmx_read(uint64_t encoding);
 
 int
 vmx_write(uint64_t encoding, uint64_t value);
+
+void
+dump_vm(struct vmcs_blob * vm);
+
 #endif
