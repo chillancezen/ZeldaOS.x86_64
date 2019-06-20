@@ -9,24 +9,8 @@
 
 #define MAX_NR_VMEXIT_REASONS 65
 
-typedef uint64_t vmexit_sub_handler(struct vmexit_info * exit);
 static vmexit_sub_handler * sub_handlers[MAX_NR_VMEXIT_REASONS];
 
-#define GOTO_NEXT_INSTRUCTION(exit) {                                          \
-    vmx_write(GUEST_RIP, vmx_read(GUEST_RIP) + (exit)->instruction_length);    \
-}
-
-#define PANIC_EXIT(exit) {                                                     \
-    dump_vm((exit)->vm);                                                       \
-    __not_reach();                                                             \
-}
-
-static uint64_t
-io_instruction_exit_sub_handler(struct vmexit_info * exit)
-{
-    PANIC_EXIT(exit);
-    return (uint64_t)exit->vm->vcpu;
-}
 
 static uint64_t
 controll_register_access_exit_sub_handler(struct vmexit_info * exit)
