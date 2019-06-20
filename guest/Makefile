@@ -14,11 +14,11 @@ GUEST_IMG = guest64.img
 GUEST_MAP = guest64.map
 %.o: %.S
 	@echo "[AS] $<"
-	@gcc $(CCPARAMS) -o $@ -c $<
+	@gcc $(CCPARAMS) -I. -o $@ -c $<
 
 %.o: %.c
 	@echo "[CC] $<"
-	@gcc $(CCPARAMS) -o $@ -c $<
+	@gcc $(CCPARAMS) -I. -o $@ -c $<
 
 $(GUEST_IMG):$(GUEST_ELF)
 	@echo "[CT] $@"

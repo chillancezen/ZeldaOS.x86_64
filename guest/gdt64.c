@@ -58,7 +58,7 @@ __attribute__((aligned(8))) struct gdt_entry initial_gdt_entries[3] = {
 
 __attribute__((aligned(8))) struct gdt_info initial_gdt_info = {
     .offset = (uint64_t)&initial_gdt_entries,
-    .size = sizeof(initial_gdt_entries) -1
+    .size = sizeof(initial_gdt_entries)
 };
 
 

@@ -113,6 +113,17 @@ halt_exit_sub_handler(struct vmexit_info * exit)
 uint64_t
 vm_exit_handler_entry(struct guest_cpu_state * vcpu)
 {
+    {
+        // Adjust the IA32_EFER.LMA bit in vmcs, and later reloaded into guest
+        // This is weird with intel VT-x vmx. please See 27.2 for more.
+        uint64_t vm_entry_ctls = vmx_read(CTLS_VM_ENTRY);
+        uint64_t guest_efer = vmx_read(GUEST_IA32_EFER);
+        if (vm_entry_ctls & (1 << 9)) {
+            vmx_write(GUEST_IA32_EFER, guest_efer | (1 << 10));
+        } else  {
+            vmx_write(GUEST_IA32_EFER, guest_efer & ~(1 << 10));
+        }
+    }
     uint64_t rsp = (uint64_t)vcpu;
     struct vmcs_blob * vm = get_current_vm();
     ASSERT(vm);

@@ -2,6 +2,7 @@
 .section .text
 .code32
 
+.extern  guest_kernel_main
 .extern initial_gdt_info
 .global init32_entry
 init32_entry:
@@ -20,17 +21,20 @@ init32_entry:
     btsl $31, %eax
     movl %eax, %cr0
     // Now CPU enters compatible long mode, not genuine 64-bit long mode
-    //call jump_64bit_mode
-1:
-    cli
-    hlt
-    jmp 1b
-
-jump_64bit_mode:
     movl $initial_gdt_info, %eax
     lgdt (%eax)
+    movw $0x10, %dx
+    movw %dx, %ds
+    movw %dx, %es
+    movw %dx, %ss
+    ljmp $0x08, $1f
+1:
+    call  guest_kernel_main
+2:
+    cli
+    hlt
+    jmp 2b
 
-    ret
 
 .equ IA32_EFER_MSR, 0xc0000080
 .equ IA32_EFER_MSR_SCE, 0x1
@@ -90,7 +94,6 @@ construct_early_page_table:
     addl $0x200000, %ebx
     loop 2b
     ret
-
 
 .section .bss
 .global pml4_base

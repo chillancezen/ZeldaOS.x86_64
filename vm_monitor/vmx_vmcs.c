@@ -494,6 +494,8 @@ initialize_vmcs_vm_entry_control(struct vmcs_blob * vm)
     uint32_t vm_entry_msr_eax, vm_entry_msr_edx;
     RDMSR(IA32_VMX_VM_ENTRY_CTLS_MSR, &vm_entry_msr_eax, &vm_entry_msr_edx);
     uint32_t vm_entry_ctls = 0;
+    // Do not mangle the 9th bit of the vm entry control, as the guest
+    // IA32_EFER.LMA is stored here. and loaded on vmentry. 
     vm_entry_ctls |= 1 << 15; // load EFER msr on vm-entry
     vm_entry_ctls = fix_reserved_1_bits(vm_entry_ctls, vm_entry_msr_eax);
     vm_entry_ctls = fix_reserved_0_bits(vm_entry_ctls, vm_entry_msr_edx);
@@ -548,6 +550,9 @@ initialize_vmcs_guest_image(struct vmcs_blob * vm)
         host_pa = guestpa_to_hostpa(vm->regions.ept_pml4_base, guest_addr);
         ASSERT(pa(host_pa) == host_pa);
         memcpy((void *)host_pa, (void *)img_addr, PAGE_SIZE_4K);
+        // FIXED: I forgot to adjust the guest_addr, thus when the guest image
+        // size exceeds 4096 bytes, my guest image in memory is ruined.
+        guest_addr += PAGE_SIZE_4K;
     }
 }
 
