@@ -23,10 +23,31 @@ vm_exit_handler:
     pushq %r8
     movq %cr2, %rax
     pushq %rax
-
+    // call the vmexit handler written in C
     movq %rsp, %rdi
     call vm_exit_handler_entry
-
+    // Restore the RSP and guest non-vmcs processor state
+    movq %rax, %rsp
+    popq %rax
+    movq %rax, %cr2
+    popq %r8
+    popq %r9
+    popq %r10
+    popq %r11
+    popq %r12
+    popq %r13
+    popq %r14
+    popq %r15
+    popq %rbp
+    popq %rdi
+    popq %rsi
+    popq %rdx
+    popq %rcx
+    popq %rbx
+    popq %rax
+    // resume the VM
+    vmresume
+    // FIXME: Error re-launching the vm, Let's go to some place to report to user
     cli
     hlt
 

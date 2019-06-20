@@ -12,10 +12,101 @@
 typedef uint64_t vmexit_sub_handler(struct vmexit_info * exit);
 static vmexit_sub_handler * sub_handlers[MAX_NR_VMEXIT_REASONS];
 
+#define GOTO_NEXT_INSTRUCTION(exit) {                                          \
+    vmx_write(GUEST_RIP, vmx_read(GUEST_RIP) + (exit)->instruction_length);    \
+}
+
+#define PANIC_EXIT(exit) {                                                     \
+    dump_vm((exit)->vm);                                                       \
+    __not_reach();                                                             \
+}
+
 static uint64_t
 io_instruction_exit_sub_handler(struct vmexit_info * exit)
 {
+    PANIC_EXIT(exit);
+    return (uint64_t)exit->vm->vcpu;
+}
 
+static uint64_t
+controll_register_access_exit_sub_handler(struct vmexit_info * exit)
+{
+    struct guest_cpu_state * vcpu = exit->vm->vcpu;
+    // See Table 27-3. Exit Qualification for Control-Register Accesses
+    uint64_t qualification = exit->exit_qualification;
+    uint8_t  ctrl_reg_index = qualification & 0xf;
+    uint8_t access_type = (qualification >> 4) & 0x3;
+#define MOV_TO_CR 0x0
+#define MOV_FROM_CR 0x1
+    uint8_t gp_reg = (qualification >> 8) & 0xf;
+    if (ctrl_reg_index == 3) {
+        if (access_type == MOV_TO_CR) {
+            // XXX: here we say only %RAX is legal to contain the operand for
+            // the sake of simplicity
+            ASSERT(gp_reg == 0);
+            uint64_t cr3_content = vcpu->rax;
+            vmx_write(GUEST_CR3, cr3_content);
+            LOG_DEBUG("vm:0x%x(vpid:%d) cr3 set to:0x%x\n", exit->vm,
+                      exit->vm->vpid, cr3_content);
+            GOTO_NEXT_INSTRUCTION(exit);
+        } else {
+            PANIC_EXIT(exit);
+        }
+    } else {
+        PANIC_EXIT(exit);
+    }
+    return (uint64_t)exit->vm->vcpu;
+}
+
+static uint64_t
+rdmsr_exit_sub_handler(struct vmexit_info * exit)
+{
+    struct guest_cpu_state * vcpu = exit->vm->vcpu;
+    switch (vcpu->rcx)
+    {
+        case 0xc0000080: // IA32_EFER
+            {
+                uint64_t guest_efer = vmx_read(GUEST_IA32_EFER);
+                vcpu->rax = (uint32_t)guest_efer;
+                vcpu->rdx = (uint32_t)(guest_efer >> 32);
+                GOTO_NEXT_INSTRUCTION(exit);
+            }
+            break;
+        default:
+            PANIC_EXIT(exit);
+            break;
+    }
+    return (uint64_t)exit->vm->vcpu;
+}
+
+static uint64_t
+wrmsr_exit_sub_handler(struct vmexit_info * exit)
+{
+    struct guest_cpu_state * vcpu = exit->vm->vcpu;
+    switch (vcpu->rcx)
+    {
+        case 0xc0000080: // IA32_EFER
+        {
+            uint64_t guest_efer;
+            guest_efer = vcpu->rax & 0xffffffff;
+            guest_efer |= (vcpu->rdx << 32) & 0xffffffff;
+            vmx_write(GUEST_IA32_EFER, guest_efer);
+            LOG_DEBUG("vm:0x%x(vpid:%d) msr:0x%x set to:0x%x\n",
+                      exit->vm, exit->vm->vpid, vcpu->rcx, guest_efer);
+            GOTO_NEXT_INSTRUCTION(exit);
+        }
+        break;
+        default:
+            PANIC_EXIT(exit);
+            break;
+    }
+    return (uint64_t)exit->vm->vcpu;
+}
+
+static uint64_t
+halt_exit_sub_handler(struct vmexit_info * exit)
+{
+    PANIC_EXIT(exit);
     return (uint64_t)exit->vm->vcpu;
 }
 
@@ -39,11 +130,18 @@ vm_exit_handler_entry(struct guest_cpu_state * vcpu)
     {
         int reason_index = info.basic_reason & 0xffff;
         ASSERT(reason_index < MAX_NR_VMEXIT_REASONS);
+        LOG_TRIVIA("exit {basic:%d, qualification:0x%x, instruction-len:%d "
+                   "guest-linear-addr:0x%x guest-phy-addr:0x%x}\n",
+                   reason_index, info.exit_qualification,
+                   info.instruction_length,
+                   info.guest_linear_addr,
+                   info.guest_physical_addr);
         if (sub_handlers[reason_index]) {
             rsp = sub_handlers[reason_index](&info);
+        } else {
+            PANIC_EXIT(&info);
         }
     }
-    dump_vm(vm);
     return rsp;
 }
 
@@ -56,5 +154,9 @@ vm_exit_handler_init(void)
     sub_handlers[(reason)] = (handler);                                        \
 }
     _(BASIC_VMEXIT_REASON_IO_INSTRUCTION, io_instruction_exit_sub_handler);
+    _(BASIC_VMEXIT_CONTROL_REGISTER_ACCESS, controll_register_access_exit_sub_handler);
+    _(BASIC_VMEXIT_REASON_HLT, halt_exit_sub_handler);
+    _(BASIC_VMEXIT_REASON_RDMSR, rdmsr_exit_sub_handler);
+    _(BASIC_VMEXIT_REASON_WRMSR, wrmsr_exit_sub_handler);
 #undef _
 }

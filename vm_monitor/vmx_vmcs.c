@@ -351,7 +351,7 @@ initialize_vmcs_procbased_control(struct vmcs_blob *vm)
         // second process based execution control, see Table 24-7
         uint32_t sec_procbase_ctls = 0;
         sec_procbase_ctls |= 1 << 1; // use EPT
-        sec_procbase_ctls |= 1 << 2; // descriptor-table exiting:GDT/LDT/IDT/TR
+        //sec_procbase_ctls |= 1 << 2; // descriptor-table exiting:GDT/LDT/IDT/TR
         sec_procbase_ctls |= 1 << 5; // enable VPID
         sec_procbase_ctls |= 1 << 7; // unrestricted guest
         sec_procbase_ctls = fix_reserved_1_bits(sec_procbase_ctls,
