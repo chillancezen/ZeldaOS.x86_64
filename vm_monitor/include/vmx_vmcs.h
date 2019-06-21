@@ -147,6 +147,8 @@ struct vmcs_blob {
     uint64_t host_stack;
     uint64_t vpid;
     struct guest_cpu_state * vcpu;
+    uint8_t * serial_line_buffer;
+    int32_t serial_line_iptr;
 };
 
 struct vmcs_msr_blob {

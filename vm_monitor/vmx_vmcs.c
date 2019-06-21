@@ -44,12 +44,15 @@ pre_initialize_vmcs(struct vmcs_blob * vm)
     vm->regions.vm_exit_store_msr_region = get_physical_page();
     vm->regions.vm_exit_load_msr_region = get_physical_page();
     vm->host_stack = get_physical_pages(HOST_STACK_NR_PAGES);
+    vm->serial_line_buffer = (uint8_t *)get_physical_page();
     _(vm->regions.guest_region);
     _(vm->regions.io_bitmap_region0);
     _(vm->regions.io_bitmap_region1);
     _(vm->regions.vm_exit_store_msr_region);
     _(vm->regions.vm_exit_load_msr_region);
     _(vm->host_stack);
+    _((uint64_t)vm->serial_line_buffer);
+    vm->serial_line_iptr = 0;
     return ERROR_OK;
 #undef _
 }
@@ -577,7 +580,7 @@ dump_vm(struct vmcs_blob * vm)
     struct guest_cpu_state * vcpu = vm->vcpu;
     ASSERT(get_current_vm() == vm);
         LOG_DEBUG("dump vm:0x%x(vpid:%d)\n", vm, vm->vpid);
-    LOG_DEBUG("   RAX:0x%x RBX:0x%x RCX:0x%x RDX:0x%d\n",
+    LOG_DEBUG("   RAX:0x%x RBX:0x%x RCX:0x%x RDX:0x%x\n",
               vcpu->rax, vcpu->rbx, vcpu->rcx, vcpu->rdx);
     LOG_DEBUG("   R15:0x%x R14:0x%x R13:0x%x, R12:0x%x\n",
               vcpu->r15, vcpu->r14, vcpu->r13, vcpu->r12);

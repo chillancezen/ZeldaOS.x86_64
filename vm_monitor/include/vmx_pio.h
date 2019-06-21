@@ -23,4 +23,7 @@ struct portio_operation{
 };
 
 #define MAX_PORTS_SUPPORTED 256
+void
+register_pio_operation(const struct portio_operation * pio);
+
 #endif
