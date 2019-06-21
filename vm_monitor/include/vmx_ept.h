@@ -67,7 +67,13 @@ struct ept_pte {
 uint64_t
 setup_basic_physical_memory(uint64_t addr_low, uint64_t addr_high);
 
+void
+setup_io_memory(uint64_t ept_pml4_base, uint64_t guest_physical_page);
+
 uint64_t
 guestpa_to_hostpa(uint64_t ept_base, uint64_t guestpa);
+
+#define PAGE_SYSTEM_MEMORY 0x0
+#define PAGE_SYSTEM_IOMEMORY 0x1
 
 #endif

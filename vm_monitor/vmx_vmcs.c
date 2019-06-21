@@ -623,6 +623,12 @@ dump_vm(struct vmcs_blob * vm)
     LOG_DEBUG("   IDTR SELECTOR:NA base:0x%x, LIMIT:0x%x, ACCESS-RIGHT:NA\n",
               vmx_read(GUEST_IDTR_BASE), vmx_read(GUEST_IDTR_LIMIT)); 
 }
+static void
+initialize_vmcs_device(struct vmcs_blob * vm)
+{
+    // Setup MMIO region for video buffer
+    setup_io_memory(vm->regions.ept_pml4_base, 0x1000b8000);
+}
 int 
 initialize_vmcs(struct vmcs_blob * vm)
 {
@@ -639,6 +645,7 @@ initialize_vmcs(struct vmcs_blob * vm)
     initialize_vmcs_vm_entry_control(vm);
     initialize_vmcs_ept(vm);
     initialize_vmcs_guest_image(vm);
+    initialize_vmcs_device(vm);
     // Launch the vm for the first time
     set_current_vm(vm);
     vmx_launch();

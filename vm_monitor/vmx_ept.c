@@ -43,8 +43,10 @@ guestpa_to_hostpa(uint64_t ept_base, uint64_t guestpa)
     out:
         return hostpa;
 }
+
+
 static int
-map_ept_page(uint64_t base, uint64_t guest_pa, uint64_t phy_pa)
+map_ept_page(uint64_t base, uint64_t guest_pa, uint64_t phy_pa, int backing)
 {
     int l4_index = LEVEL_4_INDEX(guest_pa);
     int l3_index = LEVEL_3_INDEX(guest_pa);
@@ -101,15 +103,25 @@ map_ept_page(uint64_t base, uint64_t guest_pa, uint64_t phy_pa)
         return -ERROR_DUPLICATION;
     }
     memset(_pt, 0x0, sizeof(struct ept_pte));
-    _pt->read_access = 1;
-    _pt->write_access = 1;
-    _pt->instruction_fetchable = 1;
-    _pt->usermode_instruction_fetchable = 1;
-    // FIXED: fill other fields of the last entry
-    // See 28.2.6.2
-    _pt->ignore_pat_memory_type = 1;
-    _pt->ept_memory_type = 6;
-    _pt->ept_4k_page = phy_pa >> PAGE_SHIFT_4K;
+    if (backing == PAGE_SYSTEM_MEMORY) {
+        _pt->read_access = 1;
+        _pt->write_access = 1;
+        _pt->instruction_fetchable = 1;
+        _pt->usermode_instruction_fetchable = 1;
+        // FIXED: fill other fields of the last entry
+        // See 28.2.6.2
+        _pt->ignore_pat_memory_type = 1;
+        _pt->ept_memory_type = 6;
+        _pt->ept_4k_page = phy_pa >> PAGE_SHIFT_4K;
+    } else if (backing == PAGE_SYSTEM_IOMEMORY) {
+        // Mark it as mis-configured entry
+        _pt->read_access = 0;
+        _pt->write_access = 1;
+        _pt->instruction_fetchable = 1;
+        _pt->usermode_instruction_fetchable = 1;
+        _pt->ignore_pat_memory_type = 1;
+        _pt->ept_memory_type = 6;
+    }
     return ERROR_OK;
 }
 uint64_t
@@ -125,11 +137,18 @@ setup_basic_physical_memory(uint64_t addr_low, uint64_t addr_high)
         uint64_t __pa = get_physical_page();
         ASSERT(__pa && pa(__pa) == __pa);
         memset((void *)__pa, 0x0, PAGE_SIZE_4K);
-        map_ept_page(ept_pml4_base, guest_pa, __pa);
+        map_ept_page(ept_pml4_base, guest_pa, __pa, PAGE_SYSTEM_MEMORY);
     }
     return ept_pml4_base;
 }
 
+void
+setup_io_memory(uint64_t ept_pml4_base, uint64_t guest_physical_page)
+{
+    ASSERT(map_ept_page(ept_pml4_base, guest_physical_page, 0x0,
+                        PAGE_SYSTEM_IOMEMORY) == ERROR_OK);
+
+}
 
 __attribute__((constructor)) static void
 vmx_ept_pre_init(void)

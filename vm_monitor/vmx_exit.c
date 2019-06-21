@@ -126,9 +126,11 @@ vm_exit_handler_entry(struct guest_cpu_state * vcpu)
         int reason_index = info.basic_reason & 0xffff;
         ASSERT(reason_index < MAX_NR_VMEXIT_REASONS);
         LOG_TRIVIA("exit {basic:%d, qualification:0x%x, instruction-len:%d "
-                   "guest-linear-addr:0x%x guest-phy-addr:0x%x}\n",
+                   "instruction-info:0x%x guest-linear-addr:0x%x "
+                   "guest-phy-addr:0x%x}\n",
                    reason_index, info.exit_qualification,
                    info.instruction_length,
+                   info.instruction_info,
                    info.guest_linear_addr,
                    info.guest_physical_addr);
         if (sub_handlers[reason_index]) {
