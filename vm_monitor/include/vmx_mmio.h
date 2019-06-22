@@ -7,10 +7,6 @@
 
 #define MAX_NR_MMIO_REGIONS 256
 
-#define MMIO_ACCESS_IN_BYTE 0x1
-#define MMIO_ACCESS_IN_WORD 0x2
-#define MMIO_ACCESS_IN_DWORD 0x4
-#define MMIO_ACCESS_IN_QWORD 0x8
 
 typedef uint64_t mmio_read_callback(uint64_t addr, int access_size,
                                     struct vmexit_info * exit);

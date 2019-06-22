@@ -179,5 +179,73 @@ vmx_write(uint64_t encoding, uint64_t value);
 
 void
 dump_vm(struct vmcs_blob * vm);
+// The GP registers are encoded here:
+// https://wiki.osdev.org/X86-64_Instruction_Encoding#Registers
+static inline uint64_t
+vcpu_get_gp_regiter(struct guest_cpu_state * vcpu, uint8_t index)
+{
+    uint64_t reg = 0;
+    switch(index)
+    {
+#define _(_index, value){                                                      \
+        case _index:                                                           \
+            reg = value;                                                       \
+            break;                                                             \
+}
+        _(0, vcpu->rax);
+        _(1, vcpu->rcx);
+        _(2, vcpu->rdx);
+        _(3, vcpu->rbx);
+        _(4, vmx_read(GUEST_RSP));
+        _(5, vcpu->rbp);
+        _(6, vcpu->rsi);
+        _(7, vcpu->rdi);
+        _(8, vcpu->r8);
+        _(9, vcpu->r9);
+        _(10, vcpu->r10);
+        _(11, vcpu->r11);
+        _(12, vcpu->r12);
+        _(13, vcpu->r13);
+        _(14, vcpu->r14);
+        _(15, vcpu->r15);
+#undef _
+        default:
+            break;
+    }
+    return reg;
+}
 
+static inline void
+vcpu_set_gp_regiter(struct guest_cpu_state * vcpu, uint8_t index, uint64_t val)
+{
+    switch(index)
+    {
+#define _(_index, _reg){                                                       \
+        case _index:                                                           \
+            vcpu->_reg = val;                                                  \
+            break;                                                             \
+}
+        _(0, rax);
+        _(1, rcx);
+        _(2, rdx);
+        _(3, rbx);
+        _(5, rbp);
+        _(6, rsi);
+        _(7, rdi);
+        _(8, r8);
+        _(9, r9);
+        _(10, r10);
+        _(11, r11);
+        _(12, r12);
+        _(13, r13);
+        _(14, r14);
+        _(15, r15);
+#undef _
+        case 4:
+            vmx_write(GUEST_RSP, val);
+            break;
+        default:
+            break;
+    }
+}
 #endif

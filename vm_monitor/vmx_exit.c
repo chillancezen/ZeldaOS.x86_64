@@ -155,5 +155,6 @@ vm_exit_handler_init(void)
     _(BASIC_VMEXIT_REASON_HLT, halt_exit_sub_handler);
     _(BASIC_VMEXIT_REASON_RDMSR, rdmsr_exit_sub_handler);
     _(BASIC_VMEXIT_REASON_WRMSR, wrmsr_exit_sub_handler);
+    _(BASIC_VMEXIT_REASON_EPT_MISCONFIG, ept_misconfig_exit_sub_handler);
 #undef _
 }

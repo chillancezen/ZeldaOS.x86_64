@@ -22,12 +22,15 @@ struct vmexit_info {
 #define BASIC_VMEXIT_REASON_IO_INSTRUCTION 30
 #define BASIC_VMEXIT_REASON_RDMSR 31
 #define BASIC_VMEXIT_REASON_WRMSR 32
+#define BASIC_VMEXIT_REASON_EPT_MISCONFIG 49
 
 typedef uint64_t vmexit_sub_handler(struct vmexit_info * exit);
 
 uint64_t
 io_instruction_exit_sub_handler(struct vmexit_info * exit);
 
+uint64_t
+ept_misconfig_exit_sub_handler(struct vmexit_info * exit);
 #define GOTO_NEXT_INSTRUCTION(exit) {                                          \
     vmx_write(GUEST_RIP, vmx_read(GUEST_RIP) + (exit)->instruction_length);    \
 }

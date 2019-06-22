@@ -1,6 +1,6 @@
 /*
- *  * Copyright (c) 2019 Jie Zheng
- *   */
+ * Copyright (c) 2019 Jie Zheng
+ */
 #include <vm_monitor/include/vmx_mmio.h>
 #include <lib64/include/search.h>
 #include <lib64/include/logging.h>
