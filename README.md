@@ -12,7 +12,7 @@ to clean the build, run:
 
 
 `#KVM='--enable-kvm --cpu host' ZELDA64=/path/to/repo make clean`
-## Features realized
+## Features Inventory
 
 ### Arch:x86_64 features
 - [X] running in 64-bit long mode 
