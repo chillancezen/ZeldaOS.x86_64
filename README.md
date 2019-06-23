@@ -50,7 +50,7 @@ to clean the build, run:
 ZeldaOS64 provides a normal video window to display some runtime information(TBC):
 ![image of green window](https://raw.githubusercontent.com/chillancezen/DEPRECATED-misc/master/image/green-window.png)
 
-also we have very pretty beautiful screen of death(like BSOD from Microsoft Windows, It's derived from VMware ESXi vmkernel: Purple Screen of Death:PSOD)
+also we have pretty beautiful screen of death(like BSOD from Microsoft Windows, It's derived from VMware ESXi vmkernel: Purple Screen of Death:PSOD)
 
 ![sreen of death](https://raw.githubusercontent.com/chillancezen/DEPRECATED-misc/master/image/purple-window.png)
 
