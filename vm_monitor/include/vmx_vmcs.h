@@ -138,6 +138,7 @@ struct vmcs_region {
     uint64_t vm_exit_store_msr_region; // the MSRs are stored on vm exit and loaded on vm entry
     uint64_t vm_exit_load_msr_region;  // the MSRs are loaded on vm exit
     uint64_t ept_pml4_base;
+    uint64_t video_buffer;
 };
 
 #define HOST_STACK_NR_PAGES 0x8 // 32K is supposed to be enough

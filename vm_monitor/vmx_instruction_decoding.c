@@ -70,6 +70,29 @@ opcode_c7_resolver(const uint8_t * instruction_stream,
         context->instruction_length += 5;
     }
 }
+
+static void
+opcode_b6_resolver(const uint8_t * instruction_stream,
+                   struct instruction_context * context)
+{
+    context->moderm = *instruction_stream;
+    context->instruction_length += 1;
+    context->rm_index = REG_MEM_INDEX(context);
+    context->reg_index = REG_INDEX(context);
+    context->access_size = ACCESS_IN_BYTE;
+}
+
+static void
+opcode_b7_resolver(const uint8_t * instruction_stream,
+                   struct instruction_context * context)
+{
+    context->moderm = *instruction_stream;
+    context->instruction_length += 1;
+    context->rm_index = REG_MEM_INDEX(context);
+    context->reg_index = REG_INDEX(context);
+    context->access_size = ACCESS_IN_WORD;
+}
+
 struct opcode_def {
     uint32_t code;
     uint32_t mask;
@@ -77,6 +100,9 @@ struct opcode_def {
     opcode_resolver * resolve;
 } predefined_opcodes[]= {
     //https://www.felixcloutier.com/x86/mov
+    //https://www.felixcloutier.com/x86/movzx
+    {0xb6, OPCODE_MASK_BYTE, OPERAND_HINT_MR, opcode_b6_resolver},
+    {0xb7, OPCODE_MASK_BYTE, OPERAND_HINT_MR, opcode_b7_resolver},
     {0xc6, OPCODE_MASK_BYTE, OPERAND_HINT_IM, opcode_c6_resolver},
     {0xc7, OPCODE_MASK_BYTE, OPERAND_HINT_IM, opcode_c7_resolver},
     {0x8a, OPCODE_MASK_BYTE, OPERAND_HINT_MR, opcode_8a_resolver},
@@ -101,6 +127,9 @@ decode_x86_64_instruction(const uint8_t * instruction_stream,
             case code:                                                         \
                 context->field = 1;                                            \
                 break;
+            _(0x0f, opcode_escape0);
+            _(0x38, opcode_escape1);
+            _(0x3a, opcode_escape1);
             _(0xf0, is_lock_prefixed);
             _(0xf2, is_repnez_prefixed);
             _(0xf3, is_rep_prefixed);

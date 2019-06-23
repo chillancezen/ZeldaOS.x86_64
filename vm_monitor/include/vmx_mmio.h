@@ -19,4 +19,14 @@ struct mmio_operation {
     mmio_write_callback * mmio_write;
 };
 
+void
+register_mmio_operation(const struct mmio_operation * mmio);
+
+struct mmio_operation *
+search_mmio_callback(uint64_t guest_pa);
+
+
+void
+mmio_regions_callback_init(void);
+
 #endif

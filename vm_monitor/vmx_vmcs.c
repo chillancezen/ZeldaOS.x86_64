@@ -13,6 +13,7 @@
 #include <x86_64/include/tss.h>
 #include <x86_64/include/msr.h>
 #include <x86_64/include/per_cpu.h>
+#include <vm_monitor/include/device_video.h>
 
 #define VMXWRITE(encoding, value) {                                            \
     uint64_t __value = (value);                                                \
@@ -45,6 +46,7 @@ pre_initialize_vmcs(struct vmcs_blob * vm)
     vm->regions.vm_exit_load_msr_region = get_physical_page();
     vm->host_stack = get_physical_pages(HOST_STACK_NR_PAGES);
     vm->serial_line_buffer = (uint8_t *)get_physical_page();
+    vm->regions.video_buffer = get_physical_page(); 
     _(vm->regions.guest_region);
     _(vm->regions.io_bitmap_region0);
     _(vm->regions.io_bitmap_region1);
@@ -52,6 +54,7 @@ pre_initialize_vmcs(struct vmcs_blob * vm)
     _(vm->regions.vm_exit_load_msr_region);
     _(vm->host_stack);
     _((uint64_t)vm->serial_line_buffer);
+    _(vm->regions.video_buffer);
     vm->serial_line_iptr = 0;
     return ERROR_OK;
 #undef _
@@ -626,8 +629,7 @@ dump_vm(struct vmcs_blob * vm)
 static void
 initialize_vmcs_device(struct vmcs_blob * vm)
 {
-    // Setup MMIO region for video buffer
-    setup_io_memory(vm->regions.ept_pml4_base, 0x1000b8000);
+    device_video_init(vm);
 }
 int 
 initialize_vmcs(struct vmcs_blob * vm)

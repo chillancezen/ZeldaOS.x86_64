@@ -28,6 +28,9 @@ struct instruction_context {
     uint8_t branch_taken;
     uint8_t operand_size_overrided;
     uint8_t address_size_overrided;
+    
+    uint8_t opcode_escape0;
+    uint8_t opcode_escape1;
 
     uint8_t rex_prefix;
     uint32_t opcode;

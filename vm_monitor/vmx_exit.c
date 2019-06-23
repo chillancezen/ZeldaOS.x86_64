@@ -90,6 +90,9 @@ wrmsr_exit_sub_handler(struct vmexit_info * exit)
 static uint64_t
 halt_exit_sub_handler(struct vmexit_info * exit)
 {
+    while (1) {
+        __asm__ volatile("cli; hlt;");
+    }
     PANIC_EXIT(exit);
     return (uint64_t)exit->vm->vcpu;
 }

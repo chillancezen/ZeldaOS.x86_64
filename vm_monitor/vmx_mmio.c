@@ -5,8 +5,8 @@
 #include <lib64/include/search.h>
 #include <lib64/include/logging.h>
 
-//static struct mmio_operation  mmio_regions[MAX_NR_MMIO_REGIONS];
-//static int nr_mmio_regions = 0;
+static struct mmio_operation  mmio_ops[MAX_NR_MMIO_REGIONS];
+static int nr_mmio_ops = 0;
 
 
 
@@ -35,4 +35,28 @@ mmio_operation_compare(const struct mmio_operation * mmio1,
     }
     __not_reach();
     return 0;
+}
+
+struct mmio_operation *
+search_mmio_callback(uint64_t guest_pa)
+{
+    struct mmio_operation target = {
+        .addr_low = guest_pa,
+        .addr_high = guest_pa + 1
+    };
+    return SEARCH(struct mmio_operation, mmio_ops, nr_mmio_ops,
+                  mmio_operation_compare, &target) ;
+}
+
+void
+register_mmio_operation(const struct mmio_operation * mmio)
+{
+    ASSERT(!search_mmio_callback(mmio->addr_low))
+    ASSERT(nr_mmio_ops < MAX_NR_MMIO_REGIONS);
+    memcpy(&mmio_ops[nr_mmio_ops], mmio, sizeof(struct mmio_operation));
+    nr_mmio_ops += 1;
+    SORT(struct mmio_operation, mmio_ops, nr_mmio_ops, mmio_operation_compare);
+    {
+        ASSERT(search_mmio_callback(mmio->addr_low));
+    }
 }
