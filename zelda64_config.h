@@ -4,7 +4,7 @@
  *  This is the Zelda64 Config File for both bootloader and kernel64
  */
 
-#define DEFAULT_LOGGING_LEVEL LOG_TRIVIA
+#define DEFAULT_LOGGING_LEVEL LOG_DEBUG
 
 // the maximum number of processors supported
 #define MAX_NR_CPUS 64

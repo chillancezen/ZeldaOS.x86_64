@@ -31,6 +31,10 @@ io_instruction_exit_sub_handler(struct vmexit_info * exit);
 
 uint64_t
 ept_misconfig_exit_sub_handler(struct vmexit_info * exit);
+
+uint64_t
+external_interrupt_exit_sub_handler(struct vmexit_info * exit);
+
 #define GOTO_NEXT_INSTRUCTION(exit) {                                          \
     vmx_write(GUEST_RIP, vmx_read(GUEST_RIP) + (exit)->instruction_length);    \
 }

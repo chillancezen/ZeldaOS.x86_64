@@ -6,7 +6,7 @@
 #include <lib64/include/logging.h>
 #include <lib64/include/string.h>
 #include <vm_monitor/include/vmx_exit.h>
-
+#include <vm_monitor/include/vmx_event.h>
 #define MAX_NR_VMEXIT_REASONS 65
 
 static vmexit_sub_handler * sub_handlers[MAX_NR_VMEXIT_REASONS];
@@ -90,10 +90,9 @@ wrmsr_exit_sub_handler(struct vmexit_info * exit)
 static uint64_t
 halt_exit_sub_handler(struct vmexit_info * exit)
 {
-    while (1) {
-        __asm__ volatile("cli; hlt;");
-    }
-    PANIC_EXIT(exit);
+    inject_external_event(exit, 32);
+    GOTO_NEXT_INSTRUCTION(exit);
+    //PANIC_EXIT(exit);
     return (uint64_t)exit->vm->vcpu;
 }
 
@@ -153,6 +152,7 @@ vm_exit_handler_init(void)
     ASSERT((reason) >= 0 && (reason) < MAX_NR_VMEXIT_REASONS);                 \
     sub_handlers[(reason)] = (handler);                                        \
 }
+    _(BASIC_VMEXIT_REASON_EXTERNAL_INTERRUPT, external_interrupt_exit_sub_handler);
     _(BASIC_VMEXIT_REASON_IO_INSTRUCTION, io_instruction_exit_sub_handler);
     _(BASIC_VMEXIT_CONTROL_REGISTER_ACCESS, controll_register_access_exit_sub_handler);
     _(BASIC_VMEXIT_REASON_HLT, halt_exit_sub_handler);

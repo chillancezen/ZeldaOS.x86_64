@@ -239,6 +239,12 @@ initialize_vmcs_guest_state(struct vmcs_blob *vm)
     VMXWRITE(GUEST_VMCS_LINK_POINTER_HIGH, 0xffffffff);
 
     VMXWRITE(GUEST_IA32_EFER, 0x0);
+
+    // Guest non-register state: the interruptiblity state
+    {
+        //uint64_t interruptiblity_state = 1 << 0;
+        //VMXWRITE(GUEST_INTERRUPTIBILITY_STATE, interruptiblity_state);
+    }
 }
 
 static int
@@ -298,7 +304,7 @@ initialize_vmcs_pinbased_control(struct vmcs_blob *vm)
     LOG_DEBUG("vmx pinbased.msr.edx:0x%x\n", pinbased_msr_edx);
     uint32_t pinbased_vm_execution_ctrl = 0;
     // External Interrupt causes a VM EXIT
-    //pinbased_vm_execution_ctrl |= 1;
+    pinbased_vm_execution_ctrl |= 1;
     pinbased_vm_execution_ctrl = fix_reserved_1_bits(pinbased_vm_execution_ctrl,
                                                      pinbased_msr_eax);
     pinbased_vm_execution_ctrl = fix_reserved_0_bits(pinbased_vm_execution_ctrl,
@@ -337,6 +343,7 @@ initialize_vmcs_procbased_control(struct vmcs_blob *vm)
     {
         // primary process based execution control, See Table 24-6
         uint32_t pri_procbase_ctls = 0;
+        //pri_procbase_ctls |= 1 << 2; // enable interrupt-window exit
         pri_procbase_ctls |= 1 << 7; // Hlt causes vm exit
         pri_procbase_ctls |= 1 << 9; // INVLPG causes vm exit
         pri_procbase_ctls |= 1 << 15; // CR3-load causes vm exit
