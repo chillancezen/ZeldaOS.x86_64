@@ -1,7 +1,7 @@
 #  ZeldaOS.x86_64
 
 `The 64bit version of ZeldaOS which is still written by C&GAS from scratch for study use. Its main goal this time is to support SMP and virtualization.`
-[![asciicast](https://asciinema.org/a/0TRnTBcUYFi6kOIpyjRWo16PJ.svg)](https://asciinema.org/a/0TRnTBcUYFi6kOIpyjRWo16PJ)
+[![asciicast](https://asciinema.org/a/5qJG94cGhMy1M0PTzHGqruEGS.svg)](https://asciinema.org/a/5qJG94cGhMy1M0PTzHGqruEGS)
 
 ### how to build and run it?
 
