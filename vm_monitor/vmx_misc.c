@@ -9,6 +9,7 @@
 #include <memory/include/paging.h>
 #include <lib64/include/string.h>
 #include <vm_monitor/include/device_serial.h>
+#include <vm_monitor/include/device_8259pic.h>
 #define VMXON_LOCK_FLAG 0x1
 #define VMXON_ENABLE_FLAG 0x4
 #define VMX_ENABLE_FLAG (1 << 13)
@@ -129,5 +130,6 @@ vm_monitor_init(void)
         // the CR4.vmxe can be cleared only the cpu execute VMXOFF instruction
     }
     // initailize device controller
-    vmx_device_serial_preinit(); 
+    vmx_device_serial_preinit();
+    vmx_chipset_8259pic_preinit();
 }
