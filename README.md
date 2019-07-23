@@ -5,7 +5,7 @@
 
 ### how to build and run it?
 
-It's really convenient to run the demo within the root of the repository on a nested-virtualizationed enabled Linux host([how to enable it?](https://github.com/chillancezen/ZeldaOS.x86_64/issues/2#issuecomment-495082106)):
+It's handy to run the demo within the root of the repository on a nested-virtualization enabled Linux host([how to enable it?](https://github.com/chillancezen/ZeldaOS.x86_64/issues/2#issuecomment-495082106)):
 
 `#KVM='--enable-kvm --cpu host' ZELDA64=/path/to/repo make run`
 
@@ -39,11 +39,12 @@ to clean the build, run:
 - [X] Kernel PANIC.
 
 ### VM Monitor
-- [X] Basic vmx mode switch
+- [X] Basic vmx mode switch(realmode, protected mode and 64-bit long mode)
 - [X] Memory virtualization(with Intel VT-x EPT mechanism)
 - [ ] APIC virtualization(in progress)
-- [ ] More IO devices emulation(in progress)
-- [ ] SMP virtualization
+- [X] IO emulation(PIO and MMIO)
+- [X] IO devices(serial port, video and keyboard)
+- [ ] SMP virtualization(in progress)
 
 
 

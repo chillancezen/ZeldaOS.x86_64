@@ -90,7 +90,7 @@ wrmsr_exit_sub_handler(struct vmexit_info * exit)
 static uint64_t
 halt_exit_sub_handler(struct vmexit_info * exit)
 {
-    inject_external_event(exit, 32);
+    //inject_external_event(exit, 32);
     GOTO_NEXT_INSTRUCTION(exit);
     //PANIC_EXIT(exit);
     return (uint64_t)exit->vm->vcpu;
@@ -123,7 +123,10 @@ vm_exit_handler_entry(struct guest_cpu_state * vcpu)
     info.guest_physical_addr = vmx_read(VMEXIT_GUEST_PHYSICAL_ADDR);
     info.instruction_length = vmx_read(VMEXIT_INSTRUCTION_LENGTH);
     info.instruction_info = vmx_read(VMEXIT_INSTRUCTION_INFO);
-    ASSERT(!(info.basic_reason & (1 << 31)));
+    if (info.basic_reason & (1 << 31)) {
+        LOG_TRIVIA("exit qualification:0x%x\n", info.exit_qualification);
+        PANIC_EXIT(&info);
+    }
     {
         int reason_index = info.basic_reason & 0xffff;
         ASSERT(reason_index < MAX_NR_VMEXIT_REASONS);
@@ -159,5 +162,6 @@ vm_exit_handler_init(void)
     _(BASIC_VMEXIT_REASON_RDMSR, rdmsr_exit_sub_handler);
     _(BASIC_VMEXIT_REASON_WRMSR, wrmsr_exit_sub_handler);
     _(BASIC_VMEXIT_REASON_EPT_MISCONFIG, ept_misconfig_exit_sub_handler);
+    _(BASIC_VMEXIT_REASON_INTERRUPT_WINDOW, interrupt_window_exit_sub_handler);
 #undef _
 }

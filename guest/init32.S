@@ -30,8 +30,8 @@ init32_entry:
     ljmp $0x08, $1f
 1:
     call  guest_kernel_main
+    sti
 2:
-    cli
     hlt
     jmp 2b
 
