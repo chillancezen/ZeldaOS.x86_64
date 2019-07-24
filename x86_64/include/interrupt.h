@@ -26,6 +26,9 @@ struct idt_info {
     uint64_t idt_base_address;
 }__attribute__((packed));
 
+uint64_t
+interrupt_handler(struct cpu_state64 * cpu);
+
 void
 interrupt_init(void);
 

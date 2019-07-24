@@ -3,6 +3,13 @@
  */
 #include <interrupt.h>
 #include <lib.h>
+#include <portio.h>
+
+#define PIC_MASTER_COMMAND_PORT 0x20
+#define PIC_MASTER_DATA_PORT 0x21
+#define PIC_SLAVE_COMMAND_PORT 0xa0
+#define PIC_SLAVE_DATA_PORT 0xa1
+
 
 __attribute__((aligned(16)))
 static struct interrupt_gate_descriptor interrupt_desc_table[256];
@@ -28,7 +35,11 @@ interrupt_handler(struct cpu_state64 * cpu)
     } else {
         print_string("guest interrupt delivered\n");
     }
-    //acknowledge_interrupt();
+    //acknowledge interrupt delivery
+    if (cpu->vector >= 40) {
+        outb(PIC_SLAVE_COMMAND_PORT, 0x20);
+    }
+    outb(PIC_MASTER_COMMAND_PORT, 0x20);
     return rsp;
 }
 
@@ -66,6 +77,28 @@ load_idt(void)
                          :
                          :"memory");
     }
+}
+
+void
+pic_remap(void)
+{
+    outb(PIC_MASTER_DATA_PORT, 0xff);
+    outb(PIC_SLAVE_DATA_PORT, 0xff);
+
+    outb(PIC_MASTER_COMMAND_PORT, 0x11);
+    outb(PIC_SLAVE_COMMAND_PORT, 0x11);
+
+    outb(PIC_MASTER_DATA_PORT, 0x20);
+    outb(PIC_SLAVE_DATA_PORT, 0x28);
+
+    outb(PIC_MASTER_DATA_PORT, 0x04);
+    outb(PIC_SLAVE_DATA_PORT, 0x02);
+
+    outb(PIC_MASTER_DATA_PORT, 0x01);
+    outb(PIC_SLAVE_DATA_PORT, 0x01);
+
+    outb(PIC_MASTER_DATA_PORT, 0x00);
+    outb(PIC_SLAVE_DATA_PORT, 0x00);  
 }
 
 void
@@ -331,5 +364,6 @@ interrupt_init(void)
     _(255);
 #undef _
     load_idt();
-    print_string("Finishing guest interrupt descriptor table initialization\n");
+    pic_remap();
+    print_string("Finishing guest interrupt initialization\n");
 }

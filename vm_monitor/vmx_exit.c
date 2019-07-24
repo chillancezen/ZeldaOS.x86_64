@@ -90,7 +90,6 @@ wrmsr_exit_sub_handler(struct vmexit_info * exit)
 static uint64_t
 halt_exit_sub_handler(struct vmexit_info * exit)
 {
-    //inject_external_event(exit, 32);
     GOTO_NEXT_INSTRUCTION(exit);
     //PANIC_EXIT(exit);
     return (uint64_t)exit->vm->vcpu;

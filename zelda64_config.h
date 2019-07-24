@@ -4,6 +4,7 @@
  *  This is the Zelda64 Config File for both bootloader and kernel64
  */
 
+// log verbosity option[LOG_TRIVIA, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR]
 #define DEFAULT_LOGGING_LEVEL LOG_TRIVIA
 
 // the maximum number of processors supported

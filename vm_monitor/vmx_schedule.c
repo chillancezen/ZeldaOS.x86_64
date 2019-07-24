@@ -3,8 +3,15 @@
  */
 #include <vm_monitor/include/vmx_schedule.h>
 #include <lib64/include/logging.h>
+#include <lib64/include/string.h>
 #include <vm_monitor/include/vmx_event.h>
+#include <x86_64/include/lapic.h>
 
+
+// XXX: When external interrupt occurs, the service routines defined by
+// non-vmx code will also be called, in my code, the interrupt is intercepted
+// and handled exclusively: this is OK because all the job my kernel does is to
+// serve the vm monitor.
 static uint64_t
 external_interrupt_sub_handler(struct external_interrupt_info * interrupt)
 {
@@ -40,5 +47,6 @@ external_interrupt_exit_sub_handler(struct vmexit_info * exit)
             PANIC_EXIT(exit);
             break;
     }
+    acknowledge_interrupt();
     return rsp;
 }

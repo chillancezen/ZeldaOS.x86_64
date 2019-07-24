@@ -147,7 +147,20 @@ struct vmcs_region {
 };
 
 #define HOST_STACK_NR_PAGES 0x8 // 32K is supposed to be enough
+#define PIC_INVALID_VECTOR 0xff
+struct pic8259_blob {
+    uint8_t master_pic_command;
+    uint8_t slave_pic_command;
+    uint8_t master_pic_data;
+    uint8_t slave_pic_data;
+    uint8_t is_master_pic_initializing;
+    uint8_t is_slave_pic_initializing;
+    uint8_t master_pic_offset;
+    uint8_t slave_pic_offset;
 
+    uint8_t interrupt_delivery_pending;
+    uint8_t interrupt_delivery_vector;
+};
 struct vmcs_blob {
     struct vmcs_region regions;
     uint64_t host_stack;
@@ -155,6 +168,7 @@ struct vmcs_blob {
     struct guest_cpu_state * vcpu;
     uint8_t * serial_line_buffer;
     int32_t serial_line_iptr;
+    struct pic8259_blob pic;
 };
 
 struct vmcs_msr_blob {

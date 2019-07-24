@@ -36,6 +36,6 @@ void
 keyboard_init(void)
 {
     register_interrupt_handler(33, keyboard_device_interrupt_handler);
-    ioapic_redirect_entry(1, 1);
+    ioapic_redirect_entry(1, 0);
     LOG_INFO("Initialize keyboard device\n");
 }

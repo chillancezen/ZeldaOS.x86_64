@@ -23,6 +23,7 @@
 #define ICW4_BUF_MASTER 0x0C        /* Buffered mode/master */
 #define ICW4_SFNM       0x10        /* Special fully nested (not) */
 
+#define PIC_EOI         0x20        /* end of PIC interrupt */
 void
 vmx_chipset_8259pic_preinit(void);
 #endif
