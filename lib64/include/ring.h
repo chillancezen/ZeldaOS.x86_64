@@ -82,4 +82,11 @@ ring_dequeue(struct ring * ring, uint8_t * value)
 {
     return read_ring(ring, value, 1);
 }
+
+__attribute__((always_inline)) static inline uint8_t
+ring_peek(struct ring * _ring)
+{
+    return _ring->buffer[_ring->front];
+}
+
 #endif

@@ -84,8 +84,23 @@ interrupt_window_exit_sub_handler(struct vmexit_info * exit)
         if (exit->vm->pic.interrupt_delivery_vector != PIC_INVALID_VECTOR) {
             ASSERT(exit->vm->pic.interrupt_delivery_vector >=0 &&
                    exit->vm->pic.interrupt_delivery_vector < 15);
-            interrupt_request_bitmap[exit->vm->pic.interrupt_delivery_vector] = 0;
-            exit->vm->pic.interrupt_delivery_vector = PIC_INVALID_VECTOR;
+            // XXX: Here needs special attention, we need to keep keyboard
+            // interrupt pin alerted if the keyboard buffer is till non-empty
+            // it works fine for keyboard emulation. 
+            // FIXME: We'd better have a framework to do the post interrupt
+            // delivery work in PIT EOI context or interrupt window context 
+            if (exit->vm->pic.interrupt_delivery_vector == 1) {
+                struct ring * kbd_ring = vmcs_to_keyboard_buffer(exit->vm);
+                uint8_t dummy;
+                ring_dequeue(kbd_ring, &dummy);
+                if (ring_empty(kbd_ring)) {
+                    interrupt_request_bitmap[1] = 0;
+                    exit->vm->pic.interrupt_delivery_vector = PIC_INVALID_VECTOR;
+                }
+            } else {
+                interrupt_request_bitmap[exit->vm->pic.interrupt_delivery_vector] = 0;
+                exit->vm->pic.interrupt_delivery_vector = PIC_INVALID_VECTOR;
+            }
         }
         // Find the triggered interrupt. deliver it 
         int idx = 0;

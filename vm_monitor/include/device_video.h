@@ -11,5 +11,8 @@ void
 full_refresh_video(struct vmcs_blob * vm);
 
 void
+incremental_refresh_video(struct vmcs_blob * vm, int offset, int size);
+
+void
 device_video_init(struct vmcs_blob * vm);
 #endif

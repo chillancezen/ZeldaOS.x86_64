@@ -16,7 +16,10 @@ keyboard_data_inb(uint32_t port_id, struct vmexit_info * exit)
 
     ASSERT(port_id == KEYBOARD_DATA_PORT);
     if (!ring_empty(kbd_ring)) {
-        ASSERT(1 == ring_dequeue(kbd_ring, &ret));
+        // ASSERT(1 == ring_dequeue(kbd_ring, &ret));
+        // keep the same behavior with real keyboard: only when one scancode is
+        // acked, it proceeds to next one.
+        ret = ring_peek(kbd_ring);
     }
     return ret;
 }

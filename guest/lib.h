@@ -4,7 +4,7 @@
 #ifndef _LIB_H
 #define _LIB_H
 #include <stdint.h>
-
+#include <printk.h>
 void
 memset(void *dst, const void *src, int nr_bytes);
 

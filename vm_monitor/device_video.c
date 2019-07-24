@@ -64,8 +64,16 @@ video_buffer_mmio_write(uint64_t addr, int access_size, uint64_t value,
             __not_reach();
             break;
     }
-    // FIXME: only synchronize the modified bytes
-    full_refresh_video(vm);
+    // FIXED: only synchronize the modified bytes
+    incremental_refresh_video(vm, offset, access_size);
+}
+
+void
+incremental_refresh_video(struct vmcs_blob * vm, int offset, int size)
+{
+    memcpy(offset + (uint8_t *)VIDEO_BUFFER_BASE,
+           offset + (uint8_t *)vm->regions.video_buffer,
+           size);
 }
 
 void
