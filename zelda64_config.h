@@ -42,3 +42,7 @@
 
 // maximum frames to dump in backtrace
 #define MAX_FRAMES_TO_DUMP 32
+
+// I find no feasible way to detect the CPU speed but to define one
+// FIXME: PLEASE ALSO SPECIFY ONE FOR THE MACHINE YOU ARE GOING TO RUN
+#define CPU_FREQUENCY 2494254000

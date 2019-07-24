@@ -7,6 +7,7 @@
 #include <lib64/include/string.h>
 #include <vm_monitor/include/vmx_exit.h>
 #include <vm_monitor/include/vmx_event.h>
+#include <x86_64/include/misc.h>
 #define MAX_NR_VMEXIT_REASONS 65
 
 static vmexit_sub_handler * sub_handlers[MAX_NR_VMEXIT_REASONS];

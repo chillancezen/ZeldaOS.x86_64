@@ -33,4 +33,17 @@ barrier(void)
                      :
                      :"memory");
 }
+
+
+static inline uint64_t
+rdtsc(void)
+{
+    uint32_t eax = 0;
+    uint32_t edx = 0;
+    __asm__ volatile("rdtscp;"
+                     :"=a"(eax), "=d"(edx)
+                     :
+                     :"cc");
+    return (((uint64_t)edx) << 32)| (uint64_t)eax;
+}
 #endif

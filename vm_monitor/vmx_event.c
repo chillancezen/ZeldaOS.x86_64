@@ -9,14 +9,36 @@
 
 static uint8_t interrupt_request_bitmap[15];
 
-void
-raise_interrupt(struct vmexit_info * exit, int vector)
+
+static void
+raise_interrupt_raw(struct vmexit_info * exit, int vector)
 {
     ASSERT(vector >= 0 && vector < 15);
     // XXX: not sure whether there is any race condition here.
     // but I do only raise an interrupt in a single CPU.
     // It's sure NO PROBLEM here.
     interrupt_request_bitmap[vector] = 1;
+}
+
+
+static int
+is_interrupt_pin_masked(struct vmexit_info * exit, int vector)
+{
+    ASSERT(vector >= 0 && vector < 15);
+    return (vector <= 7 && (exit->vm->pic.master_pic_data & (1 << vector))) ||
+           (exit->vm->pic.slave_pic_data & (1 << (vector - 8)));
+}
+
+void
+raise_interrupt(struct vmexit_info * exit, int vector)
+{
+    if (is_interrupt_pin_masked(exit, vector)) {
+        LOG_TRIVIA("vm:0x%x(vpid:%d) pin:%d masked, interrupt not deliverable\n",
+                  exit->vm, exit->vm->vpid, vector);
+        return;
+    }
+    raise_interrupt_raw(exit, vector);
+    enable_interrupt_window(exit);
 }
 
 static void
@@ -79,7 +101,11 @@ interrupt_window_exit_sub_handler(struct vmexit_info * exit)
         }
     }
     // Disable interrupt until other events are going to be delivered
-    disable_interrupt_window(exit);
+    // if there are multiple interrupt requests pending, leave the window open
+    // until all the the interrupts have been delivered. 
+    if (!exit->vm->pic.interrupt_delivery_pending) {
+        disable_interrupt_window(exit);
+    }
     return rsp;
 }
 

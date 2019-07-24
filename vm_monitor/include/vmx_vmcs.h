@@ -161,6 +161,13 @@ struct pic8259_blob {
     uint8_t interrupt_delivery_pending;
     uint8_t interrupt_delivery_vector;
 };
+
+struct pit8253_blob {
+    int initial_counter;
+    uint64_t divisor;
+    uint64_t threshold;
+    uint64_t last_tsc;
+};
 struct vmcs_blob {
     struct vmcs_region regions;
     uint64_t host_stack;
@@ -169,6 +176,7 @@ struct vmcs_blob {
     uint8_t * serial_line_buffer;
     int32_t serial_line_iptr;
     struct pic8259_blob pic;
+    struct pit8253_blob pit;
 };
 
 struct vmcs_msr_blob {

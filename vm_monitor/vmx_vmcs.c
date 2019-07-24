@@ -55,7 +55,10 @@ pre_initialize_vmcs(struct vmcs_blob * vm)
     _(vm->host_stack);
     _((uint64_t)vm->serial_line_buffer);
     _(vm->regions.video_buffer);
+    // Other non-zero filed to be initialized
     vm->serial_line_iptr = 0;
+    vm->pic.slave_pic_data = 0xff;
+    vm->pic.master_pic_data = 0xff;
     return ERROR_OK;
 #undef _
 }
