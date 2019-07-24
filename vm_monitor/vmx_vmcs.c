@@ -59,6 +59,10 @@ pre_initialize_vmcs(struct vmcs_blob * vm)
     vm->serial_line_iptr = 0;
     vm->pic.slave_pic_data = 0xff;
     vm->pic.master_pic_data = 0xff;
+    {
+        struct ring * _ring = vmcs_to_keyboard_buffer(vm);
+        _ring->ring_size = SCANCODE_BUFFER_LENGTH;
+    }
     return ERROR_OK;
 #undef _
 }

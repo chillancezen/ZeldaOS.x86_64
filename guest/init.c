@@ -7,6 +7,8 @@
 #include <video.h>
 #include <interrupt.h>
 #include <pit.h>
+#include <keyboard.h>
+#include <timer.h>
 
 void
 guest_kernel_main(void)
@@ -15,4 +17,6 @@ guest_kernel_main(void)
     interrupt_init();
     pit_init();
     video_init();
+    keyboard_init();    
+    timer_init();
 }

@@ -7,6 +7,7 @@
 #include <vm_monitor/include/vmx_event.h>
 #include <x86_64/include/lapic.h>
 #include <x86_64/include/misc.h>
+#include <device/include/keyboard.h>
 
 // XXX: When external interrupt occurs, the service routines defined by
 // non-vmx code will also be called, in my code, the interrupt is intercepted
@@ -32,6 +33,16 @@ external_interrupt_sub_handler(struct external_interrupt_info * interrupt)
                     }
                     vm->pit.last_tsc = curr_tsc;
                 }
+            }
+            break;
+        case 0x21: // The keyboad interrupt
+            {
+                uint8_t scancode;
+                struct ring * kbd_ring = vmcs_to_keyboard_buffer(vm);
+                try_retrieve_scancode(&scancode);
+                // If the buffer is full and scancode drops, it drops.
+                ring_enqueue(kbd_ring, scancode);
+                raise_interrupt(interrupt->exit, 0x1);
             }
             break;
         default:

@@ -23,6 +23,17 @@ retrieve_scancode(void)
     return code;
 }
 
+uint8_t
+try_retrieve_scancode(uint8_t * scancode)
+{
+    uint8_t code = inb(KEYBOARD_DATA_PORT);
+    if (!code) {
+        return -ERROR_OUT_OF_RESOURCE;
+    }
+    *scancode = code;
+    return ERROR_OK;
+}
+
 static uint64_t
 keyboard_device_interrupt_handler(struct cpu_state64 * cpu)
 {

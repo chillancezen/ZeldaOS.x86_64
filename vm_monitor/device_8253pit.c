@@ -33,7 +33,7 @@ pit_outb(uint32_t port_id, uint8_t byte, struct vmexit_info * exit)
                 vm->pit.initial_counter++;
                 vm->pit.threshold =
                     1000 / (OSCILLATPR_CHIP_FREQUENCY / vm->pit.divisor);
-                LOG_DEBUG("vm:0x%x(vpid:%d) pit expiry threshold: %q mseconds\n",
+                LOG_TRIVIA("vm:0x%x(vpid:%d) pit expiry threshold: %q mseconds\n",
                           vm, vm->vpid, vm->pit.threshold);
             } else {
                 PANIC_EXIT(exit);

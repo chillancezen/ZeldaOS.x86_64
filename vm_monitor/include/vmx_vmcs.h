@@ -5,6 +5,7 @@
 #ifndef _VMX_VMCS_H
 #define _VMX_VMCS_H
 #include <lib64/include/type.h>
+#include <lib64/include/ring.h>
 #include <vm_monitor/include/vmx_vcpu_state.h>
 // VMCS HOST STATE FIELDS: see Intel SDM Volume 3, Appendix B.1.3,
 // Appendix B.2.4, Appendix B.3.4 and Appendix 4.4.4
@@ -168,6 +169,12 @@ struct pit8253_blob {
     uint64_t threshold;
     uint64_t last_tsc;
 };
+
+#define SCANCODE_BUFFER_LENGTH 0x32
+struct keyboard_blob {
+    uint8_t ring_blob[sizeof (struct ring) + SCANCODE_BUFFER_LENGTH];
+};
+
 struct vmcs_blob {
     struct vmcs_region regions;
     uint64_t host_stack;
@@ -177,7 +184,10 @@ struct vmcs_blob {
     int32_t serial_line_iptr;
     struct pic8259_blob pic;
     struct pit8253_blob pit;
+    struct keyboard_blob kbd;
 };
+
+#define vmcs_to_keyboard_buffer(vm) ((struct ring *)((vm)->kbd.ring_blob))
 
 struct vmcs_msr_blob {
     uint32_t index;

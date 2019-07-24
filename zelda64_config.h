@@ -5,7 +5,7 @@
  */
 
 // log verbosity option[LOG_TRIVIA, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR]
-#define DEFAULT_LOGGING_LEVEL LOG_TRIVIA
+#define DEFAULT_LOGGING_LEVEL LOG_DEBUG
 
 // the maximum number of processors supported
 #define MAX_NR_CPUS 64
