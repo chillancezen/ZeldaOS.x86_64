@@ -353,6 +353,7 @@ initialize_vmcs_procbased_control(struct vmcs_blob *vm)
         pri_procbase_ctls |= 1 << 2; // enable interrupt-window exit
         pri_procbase_ctls |= 1 << 7; // Hlt causes vm exit
         pri_procbase_ctls |= 1 << 9; // INVLPG causes vm exit
+        pri_procbase_ctls |= 1 << 12; // RDTSC exiting
         pri_procbase_ctls |= 1 << 15; // CR3-load causes vm exit
         pri_procbase_ctls |= 1 << 16; // CR3-store causes vm exit
         pri_procbase_ctls |= 1 << 24; // Unconditional IO exiting

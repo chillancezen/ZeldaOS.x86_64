@@ -6,6 +6,7 @@
 #include <lib.h>
 #include <interrupt.h>
 #include <portio.h>
+#include <tetris.h>
 
 #define KEYBOARD_DATA_PORT 0x60
 
@@ -24,8 +25,26 @@ static uint64_t
 keyboard_interrupt_handler(struct cpu_state64 * cpu)
 {
     uint8_t code;
-    try_retrieve_scancode(&code);    
-    printk("keyboard interrupted:%x\n", code);
+    try_retrieve_scancode(&code);
+    switch (code)
+    {
+        case 0x50: // Down
+            on_key_arrow_down();
+            break;
+        case 0x4b: // Left
+            on_key_arrow_left();
+            break;
+        case 0x4d: // Right
+            on_key_arrow_right();
+            break;
+        case 0x39: // BLANK
+            on_key_blank();
+            break;
+        default:
+            //printk("unsupported keyboard scancode:%x\n", code);
+            break;
+
+    }
     return (uint64_t)cpu;
 }
 void

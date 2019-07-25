@@ -33,7 +33,7 @@ interrupt_handler(struct cpu_state64 * cpu)
     if (handler) {
         rsp = handler(cpu);
     } else {
-        print_string("guest interrupt delivered\n");
+        printk("unrecoginzed guest interrupt request:%d\n", cpu->vector);
     }
     //acknowledge interrupt delivery
     if (cpu->vector >= 40) {

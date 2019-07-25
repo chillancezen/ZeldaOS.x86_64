@@ -9,6 +9,7 @@
 #include <pit.h>
 #include <keyboard.h>
 #include <timer.h>
+#include <tetris.h>
 
 void
 guest_kernel_main(void)
@@ -19,4 +20,5 @@ guest_kernel_main(void)
     video_init();
     keyboard_init();    
     timer_init();
+    tetris_init();
 }

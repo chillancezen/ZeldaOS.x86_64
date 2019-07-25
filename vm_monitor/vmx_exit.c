@@ -8,6 +8,8 @@
 #include <vm_monitor/include/vmx_exit.h>
 #include <vm_monitor/include/vmx_event.h>
 #include <x86_64/include/misc.h>
+#include <vm_monitor/include/vmx_rdtsc.h>
+
 #define MAX_NR_VMEXIT_REASONS 65
 
 static vmexit_sub_handler * sub_handlers[MAX_NR_VMEXIT_REASONS];
@@ -163,5 +165,6 @@ vm_exit_handler_init(void)
     _(BASIC_VMEXIT_REASON_WRMSR, wrmsr_exit_sub_handler);
     _(BASIC_VMEXIT_REASON_EPT_MISCONFIG, ept_misconfig_exit_sub_handler);
     _(BASIC_VMEXIT_REASON_INTERRUPT_WINDOW, interrupt_window_exit_sub_handler);
+    _(BASIC_VMEXIT_REASON_RDTSC, rdtsc_exit_sub_handler);
 #undef _
 }
