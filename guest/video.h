@@ -33,4 +33,13 @@
 
 void
 video_init(void);
+
+void
+video_remap(void);
+
+void
+print_text(int idx_row, int idx_col, const char * text);
+
+void
+print_text_with_color(int idx_row, int idx_col, const char * text, int color);
 #endif

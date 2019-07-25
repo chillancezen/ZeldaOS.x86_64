@@ -21,6 +21,7 @@ try_retrieve_scancode(uint8_t * scancode)
     return 1;
 }
 
+static uint8_t ctrl_down = 0;
 static uint64_t
 keyboard_interrupt_handler(struct cpu_state64 * cpu)
 {
@@ -28,6 +29,20 @@ keyboard_interrupt_handler(struct cpu_state64 * cpu)
     try_retrieve_scancode(&code);
     switch (code)
     {
+        case 0x1c: // Enter
+            tetris_start();
+            break;
+        case 0x13: // R
+            if (ctrl_down) {
+                tetris_reset();
+            }
+            break;
+        case 0x1d: // CTRL DOWN
+            ctrl_down = 1;
+            break;
+        case 0x9d: // CTRL UP
+            ctrl_down = 0;
+            break;
         case 0x50: // Down
             on_key_arrow_down();
             break;

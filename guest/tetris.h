@@ -11,7 +11,7 @@
 
 #define GRID_WIDTH 16
 #define GRID_HEIGHT 20
-#define GRID_AXIS_X ((80 - GRID_WIDTH) / 2)
+#define GRID_AXIS_X 62
 #define GRID_ASIS_Y 4
 
 #define MAKE_BYTE(hi, lo) ((((hi) << 4) & 0xf0) | ((lo) & 0xf))
@@ -35,6 +35,7 @@ struct shape_group {
 #define NR_SHAPE_TYPE 4
 
 struct block {
+    int plotted;
     int x_pos;
     int y_pos;
     int color;
@@ -65,4 +66,10 @@ on_key_arrow_left(void);
 
 void
 on_key_arrow_right(void);
+
+void
+tetris_start(void);
+
+void
+tetris_reset(void);
 #endif

@@ -51,6 +51,8 @@ print_text(int idx_row, int idx_col, const char * text)
         *ptr = *text_ptr;
     }
 }
+
+
 static const char *banner[] ={    
 "________________________________________________",
 "     ___                               __       ",
