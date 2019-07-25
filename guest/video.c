@@ -87,6 +87,10 @@ video_remap(void)
     print_text_with_color(15, 2, "Instructions:", MAKE_BYTE(COLOR_BLACK, COLOR_YELLOW));
     print_text_with_color(16, 2, "  [ Enter ] suspend/resume the game", MAKE_BYTE(COLOR_BLACK, COLOR_YELLOW));
     print_text_with_color(17, 2, "  [ Ctrl+R] reset the game", MAKE_BYTE(COLOR_BLACK, COLOR_YELLOW));
+    print_text_with_color(18, 2, "  [ blank]  rotate the shape", MAKE_BYTE(COLOR_BLACK, COLOR_YELLOW));
+    print_text_with_color(19, 2, "  [ down arrow ]  adjust the axis Y position by +1", MAKE_BYTE(COLOR_BLACK, COLOR_YELLOW));
+    print_text_with_color(20, 2, "  [ left arrow ]  adjust the axis X position by -1", MAKE_BYTE(COLOR_BLACK, COLOR_YELLOW));
+    print_text_with_color(21, 2, "  [ right arrow]  adjust the axis X position by +1", MAKE_BYTE(COLOR_BLACK, COLOR_YELLOW));
 }
 
 void

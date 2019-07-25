@@ -1,6 +1,6 @@
 #  ZeldaOS.x86_64
 
-`The 64bit version of ZeldaOS which is still written by C&GAS from scratch for study use. Its main goal this time is to support SMP and virtualization.`
+`The 64bit version of ZeldaOS which is still written by C&GAS from scratch for study use. Its main goal this time is to support SMP and virtualization. it's able to run a game: tetris inside guest OS`
 [![asciicast](https://asciinema.org/a/5qJG94cGhMy1M0PTzHGqruEGS.svg)](https://asciinema.org/a/5qJG94cGhMy1M0PTzHGqruEGS)
 
 ### how to build and run it?
@@ -49,8 +49,11 @@ to clean the build, run:
 
 
 ### screenshot of the demononstration.
+The Game: Tetris running as guest OS:
+![image of green window](https://raw.githubusercontent.com/chillancezen/DEPRECATED-misc/master/image/teris.png)
+
 ZeldaOS64 provides a normal video window to display some runtime information(TBC):
-![image of green window](https://raw.githubusercontent.com/chillancezen/DEPRECATED-misc/master/image/green-window.png)
+![image of green window](https://raw.githubusercontent.com/chillancezen/DEPRECATED-misc/master/image/main.png)
 
 also we have pretty beautiful screen of death(like BSOD from Microsoft Windows, It's derived from VMware ESXi vmkernel: Purple Screen of Death:PSOD)
 
