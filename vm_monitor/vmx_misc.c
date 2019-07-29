@@ -57,17 +57,19 @@ vm_monitor_init(void)
         uint32_t eax;
         uint32_t edx;
         RDMSR(ecx, &eax, &edx);
-
-        // If BIOS lock the vmx, we should not go on. Go to configure BIOS to
-        // enable intel VT-x...
-        ASSERT(!(eax & VMXON_LOCK_FLAG));
-
-        if (!(eax & VMXON_ENABLE_FLAG)) {
+        
+        if (eax & VMXON_LOCK_FLAG) {
+            // The CPU has only one chance to set the VMXON_LOCK_FLAG bit on, if
+            // it fails, it may never be enabled, any write to the IA32_FEATURE_CONTROL_MSR
+            // causes #GP exception.
+            ASSERT(eax & VMXON_ENABLE_FLAG);
+        } else {
             ecx = IA32_FEATURE_CONTROL_MSR;
             eax |= VMXON_LOCK_FLAG;
             eax |= VMXON_ENABLE_FLAG;
             WRMSR(ecx, eax, edx);
         }
+
         ecx = IA32_FEATURE_CONTROL_MSR;
         RDMSR(ecx, &eax, &edx);
         ASSERT(eax & VMXON_ENABLE_FLAG);

@@ -344,9 +344,9 @@ initialize_vmcs_procbased_control(struct vmcs_blob *vm)
     // Examine basic ept and vpid capability.
     ASSERT(vpid_and_ept_msr_eax & 0x1);
     //ASSERT(vpid_and_ept_msr_eax & (1 << 8));
-    ASSERT(vpid_and_ept_msr_eax & (1 << 14));
-    ASSERT(vpid_and_ept_msr_eax & (1 << 21));
-    ASSERT(vpid_and_ept_msr_edx & 0x1);
+    //ASSERT(vpid_and_ept_msr_eax & (1 << 14));
+    //ASSERT(vpid_and_ept_msr_eax & (1 << 21));
+    //ASSERT(vpid_and_ept_msr_edx & 0x1);
     {
         // primary process based execution control, See Table 24-6
         uint32_t pri_procbase_ctls = 0;
