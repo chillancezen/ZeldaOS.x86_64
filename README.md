@@ -1,6 +1,6 @@
 #  ZeldaOS.x86_64
 
-`The 64bit version of ZeldaOS which is still written with C&GAS from scratch for study use. Its main goal this time is to support SMP and virtualization. it's able to run a game: tetris inside guest OS`
+`The 64bit version of ZeldaOS which is still written in C&GAS from scratch for study use. Its main goal this time is to support SMP and virtualization. it's able to run a game: tetris inside guest OS`
 [![asciicast](https://asciinema.org/a/5qJG94cGhMy1M0PTzHGqruEGS.svg)](https://asciinema.org/a/5qJG94cGhMy1M0PTzHGqruEGS)
 
 ### how to build and run it?
