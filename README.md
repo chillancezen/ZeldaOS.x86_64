@@ -34,6 +34,7 @@ to clean the build, run:
 
 ### Kernel features 
 - [X] cusomized bootloader(only support legacy BIOS boot)
+- [X] PXE boot supported with https://github.com/goupaz/pxeboot
 - [X] Synchronization primitives: spinlock...
 - [X] Processor-local storage and per-cpu framework.
 - [X] Kernel PANIC.
@@ -43,7 +44,7 @@ to clean the build, run:
 - [X] Memory virtualization(with Intel VT-x EPT mechanism)
 - [ ] APIC virtualization(in progress)
 - [X] IO emulation(PIO and MMIO)
-- [X] IO devices(serial port, video and keyboard)
+- [X] IO devices(serial port, video and keyboard), details can be found from ![wiki](https://wiki.osdev.org/VMX#Peripheral_Emulation)
 - [ ] SMP virtualization(in progress)
 
 
