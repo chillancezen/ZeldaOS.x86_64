@@ -44,7 +44,7 @@ to clean the build, run:
 - [X] Memory virtualization(with Intel VT-x EPT mechanism)
 - [ ] APIC virtualization(in progress)
 - [X] IO emulation(PIO and MMIO)
-- [X] IO devices(serial port, video and keyboard), details can be found from ![wiki](https://wiki.osdev.org/VMX#Peripheral_Emulation)
+- [X] IO devices(serial port, video and keyboard), details can be found from [wiki](https://wiki.osdev.org/VMX#Peripheral_Emulation)
 - [ ] SMP virtualization(in progress)
 
 
