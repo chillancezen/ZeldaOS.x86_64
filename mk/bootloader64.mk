@@ -12,7 +12,7 @@ BOOTLOADER_IMAGE: $(BL_BIN)
 
 $(BL_ELF):$(ZELDA64)/bootloader/$(BL_SRCS)
 	@echo "[AS] $<"
-	@gcc -m32 -I . -o $@ -c $<
+	@$(CC) -m32 -I . -o $@ -c $<
 
 $(BL_BIN):$(BL_ELF)
 	@echo "[BI] $@"

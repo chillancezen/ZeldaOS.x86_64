@@ -24,11 +24,11 @@ AS_OBJS = $(patsubst %.S,%.o,$(AS_FILES))
 IMAGE_DEPEND = $(C_OBJS) $(AS_OBJS)
 %.o: %.c
 	@echo "[CC] $<"
-	@gcc $(CCPARAMS) $(DEFS) -DC_CONTEXT -I . -include zelda64_config.h  -o $@ -c $<
+	@$(CC) $(CCPARAMS) $(DEFS) -DC_CONTEXT -I . -include zelda64_config.h  -o $@ -c $<
 
 %.o: %.S
 	@echo "[AS] $<"
-	@gcc $(CCPARAMS) $(DEFS) -I . -include zelda64_config.h -o $@ -c $<
+	@$(CC) $(CCPARAMS) $(DEFS) -I . -include zelda64_config.h -o $@ -c $<
 
 .PHONY:KERNEL_IMAGE
 KERNEL_IMAGE: $(BIN)

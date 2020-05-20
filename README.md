@@ -7,12 +7,12 @@
 
 It's handy to run the demo within the root of the repository on a nested-virtualization enabled Linux host([how to enable it?](https://github.com/chillancezen/ZeldaOS.x86_64/issues/2#issuecomment-495082106)):
 
-`#KVM='--enable-kvm --cpu host' ZELDA64=/path/to/repo make run`
+`#KVM='--enable-kvm --cpu host' ZELDA64=/path/to/repo CC=gcc-4.8 make run`
 
 to clean the build, run:
 
 
-`#KVM='--enable-kvm --cpu host' ZELDA64=/path/to/repo make clean`
+`#KVM='--enable-kvm --cpu host' ZELDA64=/path/to/repo CC=gcc-4.8 make clean`
 ## Features Inventory
 
 ### Arch:x86_64 features
