@@ -84,7 +84,7 @@ void
 enable_local_apic(void);
 
 
-inline uint32_t
+extern uint32_t
 cpu(void);
 
 void
